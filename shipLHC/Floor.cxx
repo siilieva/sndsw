@@ -59,18 +59,21 @@ void Floor::ConstructGeometry()
 	InitMedium("Concrete");
 	TGeoMedium *concrete =gGeoManager->GetMedium("Concrete");
 
-	TGeoArb8 *fl_arb = new TGeoArb8(130);
+	TGeoArb8 *fl_arb = new TGeoArb8(140);
+
+	Double_t newy = (0. - 8.)/ 260. * 280. + 8.;
+	
 	fl_arb->SetVertex(0,20,-60);
 	fl_arb->SetVertex(1,20,8.);
 	fl_arb->SetVertex(2,-80,8.);
 	fl_arb->SetVertex(3,-80,-60);
 	fl_arb->SetVertex(4,20,-60);
-	fl_arb->SetVertex(5,20,0.);
-	fl_arb->SetVertex(6,-80,0.);
+	fl_arb->SetVertex(5,20,newy);
+	fl_arb->SetVertex(6,-80,newy);
 	fl_arb->SetVertex(7,-80,-60);
 	TGeoVolume *volfloor = new TGeoVolume("floor",fl_arb,concrete);
 	volfloor->SetLineColor(20);
-	top->AddNode(volfloor,1, new TGeoTranslation(0,0,80));
+	top->AddNode(volfloor,1, new TGeoTranslation(0,0,90));
 }
 
 ClassImp(Floor)

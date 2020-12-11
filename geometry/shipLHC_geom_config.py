@@ -91,3 +91,4 @@ with ConfigRegistry.register_config("basic") as c:
         c.MuFilter.Zcenter = c.EmulsionDet.zC+c.EmulsionDet.zdim/2+c.MuFilter.Z/2
         c.MuFilter.ShiftX = c.EmulsionDet.ShiftX
         c.MuFilter.ShiftY = 3.55*u.cm+c.MuFilter.Y/2. #since y size increased of 0.5, we need to increase this shift from 3.3 to 3.55
+        c.MuFilter.StereoAngle = 45.

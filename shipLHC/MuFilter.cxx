@@ -89,6 +89,10 @@ MuFilter::~MuFilter()
     }
 }
 
+void MuFilter::SetStereoAngle(Double_t StereoAngle){
+        fStereoAngle = StereoAngle;
+}
+
 void MuFilter::SetIronBlockDimensions(Double_t x, Double_t y, Double_t z)
 {
 	fFeBlockX = x;
@@ -305,31 +309,19 @@ void MuFilter::ConstructGeometry()
 	AddSensitiveVolume(volMuDownstreamBar_ver);
 
 	//stereo view
-	const double stereoangle = 45.;
-	Double_t fDownstreamDetX_Stereo = fDownstreamDetX / TMath::Cos(TMath::DegToRad()*stereoangle); //put condition to exclude 90°
-        Double_t fDownstreamDetY_Stereo = fDownstreamDetY + fDownstreamDetX * TMath::Tan(TMath::DegToRad()*stereoangle);
+	Double_t fDownstreamDetX_Stereo = fDownstreamDetX / TMath::Cos(TMath::DegToRad()*fStereoAngle); //put condition to exclude 90°
+        Double_t fDownstreamDetY_Stereo = fDownstreamDetY + fDownstreamDetX * TMath::Tan(TMath::DegToRad()*fStereoAngle);
 	Double_t fDownstreamDetZ_Stereo = 2*fDownstreamBarZ;
-	
-        TGeoBBox *DownstreamDetBox_Stereo = new TGeoBBox("DownstreamDetBox_Stereo",fDownstreamDetX_Stereo/2,fDownstreamDetY_Stereo/2,fDownstreamDetZ_Stereo/2);
-        TGeoVolume *volDownstreamDet_Stereo = new TGeoVolume("volDownstreamDet_Stereo", DownstreamDetBox_Stereo,air);
-        volDownstreamDet_Stereo->SetLineColor(kRed+2);
-
-
+      
 	Double_t fDownstreamBarX_Stereo = fDownstreamDetX_Stereo; 
-        Double_t fDownstreamBarY_Stereo = (fDownstreamDetY_Stereo + fDownstreamBarOverlap/TMath::Cos(TMath::DegToRad()*stereoangle)
-					  * (fNDownstreamBars - 1))/fNDownstreamBars  * TMath::Cos(TMath::DegToRad()*stereoangle);;
+        Double_t fDownstreamBarY_Stereo = (fDownstreamDetY_Stereo + fDownstreamBarOverlap/TMath::Cos(TMath::DegToRad()*fStereoAngle)
+					  * (fNDownstreamBars - 1))/fNDownstreamBars  * TMath::Cos(TMath::DegToRad()*fStereoAngle);;
 
-	//TGeoBBox *MuDownstreamBar_Stereo = new TGeoBBox("MuDownstreamBar_hor",fDownstreamBarX_Stereo/2, fDownstreamBarY_Stereo/2, fDownstreamBarZ/2);
-	//TGeoVolume *volMuDownstreamBar_Stereo = new TGeoVolume("volMuDownstreamBar_hor",MuDownstreamBar_Stereo,Scint);
-	//volMuDownstreamBar_Stereo->SetLineColor(kBlue+2);
-	//AddSensitiveVolume(volMuDownstreamBar_Stereo);
-
-	TGeoRotation *stereorot = new TGeoRotation("stereorot",stereoangle,0,0);
+	TGeoRotation *stereorot = new TGeoRotation("stereorot",fStereoAngle,0,0);
         stereorot->SetName("stereorot");
         stereorot->RegisterYourself();
         TGeoTranslation *stereopos = new TGeoTranslation(0,0,-fDownstreamDetZ/2 + 4 * fDownstreamBarZ + 2*fDownstreamBarZ/2);
         TGeoCombiTrans * stereo = new TGeoCombiTrans(*stereopos, *stereorot);
-	volDownstreamDet->AddNode(volDownstreamDet_Stereo,1,stereopos);
 
 	//adding bars
 	
@@ -359,10 +351,10 @@ void MuFilter::ConstructGeometry()
 	  volDownstreamDet->AddNode(volMuDownstreamBar_ver,ibar+1E+5,xztrans);
 
 	  //adding stereo bars
-	  Double_t dy_bar_stereo = -fDownstreamDetY_Stereo/2. + fDownstreamBarY_Stereo/2. + (fDownstreamBarY_Stereo - fDownstreamBarOverlap)/TMath::Cos(TMath::DegToRad()*stereoangle)*ibar; 
+	  Double_t dy_bar_stereo = -fDownstreamDetY_Stereo/2. + fDownstreamBarY_Stereo/2. + (fDownstreamBarY_Stereo - fDownstreamBarOverlap)/TMath::Cos(TMath::DegToRad()*fStereoAngle)*ibar; 
 	  Double_t dz_bar_stereo = -fDownstreamDetZ_Stereo/2. + fDownstreamBarZ/2. * (2 *(ibar%2) + 1.); //on the left or right side of the volume
 
-	  TGeoTranslation *yztrans_stereo = new TGeoTranslation(fDownstreamBarY_Stereo*TMath::Sin(TMath::DegToRad()*stereoangle)/2.,dy_bar_stereo,dz_bar_stereo);
+	  TGeoTranslation *yztrans_stereo = new TGeoTranslation(fDownstreamBarY_Stereo*TMath::Sin(TMath::DegToRad()*fStereoAngle)/2.,dy_bar_stereo,dz_bar_stereo);
 	  yztrans_stereo->SetName(Form("yztrans_stereo[%i]",ibar));
 	  yztrans_stereo->RegisterYourself();
 	  TGeoCombiTrans *yzstereo = new TGeoCombiTrans(*yztrans_stereo, *stereorot);
@@ -374,16 +366,9 @@ void MuFilter::ConstructGeometry()
 	  volMuDownstreamBar_Stereo[ibar]->SetLineColor(kRed);
 	  AddSensitiveVolume(volMuDownstreamBar_Stereo[ibar]);
 	  
-	  volDownstreamDet_Stereo->AddNode(volMuDownstreamBar_Stereo[ibar],ibar+1E+4,new TGeoTranslation(0,0,0));
-
-	  //  Double_t dy_bar_stereo = -fDownstreamDetY_Stereo/2 + fDownstreamBarY_Stereo/2. + (fDownstreamBarY_Stereo - fDownstreamBarOverlap)*ibar; 
-	  // Double_t dz_bar_stereo = -2*fDownstreamBarZ/2. + fDownstreamBarZ/2. * (2 *(ibar%2) + 1.); //on the left or right side of the volume
-
-	  //  TGeoTranslation *yztrans_stereo = new TGeoTranslation(0,dy_bar_stereo,dz_bar_stereo);
-
-	  //volDownstreamDet_Stereo->AddNode(volMuDownstreamBar_Stereo,ibar+1E+3,yztrans_stereo);
-       
-			   }    
+	  volDownstreamDet->AddNode(volMuDownstreamBar_Stereo[ibar],ibar+1E+4,stereopos);
+              
+	}    
 }
 
 Bool_t  MuFilter::ProcessHits(FairVolume* vol)

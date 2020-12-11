@@ -70,6 +70,7 @@ def configure(run,ship_geo,Gfield=''):
  MuFilter.SetDownstreamVerticalBarsDimensions(ship_geo.MuFilter.DownstreamBarX_ver, ship_geo.MuFilter.DownstreamBarY_ver, ship_geo.MuFilter.DownstreamBarZ_ver)
  MuFilter.SetOverlapDownstreamBars(ship_geo.MuFilter.OverlapDownstreamBars)
  MuFilter.SetNDownstreamBars(ship_geo.MuFilter.NDownstreamBars)
+ MuFilter.SetStereoAngle(ship_geo.MuFilter.StereoAngle)
 
  MuFilter.SetCenterZ(ship_geo.MuFilter.Zcenter)
  MuFilter.SetXYDisplacement(ship_geo.MuFilter.ShiftX, ship_geo.MuFilter.ShiftY)

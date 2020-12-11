@@ -49,7 +49,7 @@ class MuFilter : public FairDetector
                 void SetDownstreamVerticalBarsDimensions(Double_t, Double_t, Double_t);
 		void SetNDownstreamBars(Int_t);
 		void SetOverlapDownstreamBars(Double_t);
-
+                void SetStereoAngle(Double_t);
 		
 
 
@@ -146,6 +146,8 @@ class MuFilter : public FairDetector
 			Double_t fShiftX;	//|Shift in x-y wrt beam line
 			Double_t fShiftY;	//|
 			Double_t fShiftDY;	//|Shift in DY of the first 6 planes (2 cm)
+                        Double_t fStereoAngle; 
+
 
 			Int_t InitMedium(const char* name);
 };
