@@ -65,10 +65,11 @@ Bool_t  Floor::ProcessHits(FairVolume* vol)
   // Sum energy loss for all steps in the active volume
   fELoss += gMC->Edep();
 
-  // Create vetoPoint at exit of active volume
-  if ( gMC->IsTrackExiting()    ||
-       gMC->IsTrackStop()       ||
-       gMC->IsTrackDisappeared()   ) {
+  // Create vetoPoint at exit of active volume 
+ // do not store stopped or disappeared tracks
+  if ( gMC->IsTrackDisappeared()   ||
+       gMC->IsTrackStop() ){return kTRUE;}
+  if (  gMC->IsTrackExiting()      ) {
     fTrackID  = gMC->GetStack()->GetCurrentTrackNumber();
 
     Int_t veto_uniqueId = 47.;
