@@ -14,6 +14,7 @@ parser.add_argument("-t", "--tolerance", dest="tolerance",  type=float, help="Ho
 
 parser.add_argument("--hits_to_fit", dest = "hits_to_fit", type=str, help="Which detectors to use in the fit, in the format: vesfusds, where [ve] is veto, [sf] is Scifi, [us] is Upstream muon filter, and [ds] is downstream muon filter. Default: sfusds", default = "sfusds")
 parser.add_argument("--hits_for_triplet", dest = "hits_for_triplet", type=str, help="Which detectors to use for the triplet condition. In the same format as --hits_to_fit. Default: ds", default = "ds")
+parser.add_argument("-wX", "--withXmeas", dest="withXmeas", help="using X measurement by horizontal MuFi bars", action='store_true',default=False)
 
 options = parser.parse_args()
 
@@ -56,6 +57,7 @@ run.Init()
 muon_reco_task.SetTolerance(options.tolerance)
 muon_reco_task.SetHitsToFit(options.hits_to_fit)
 muon_reco_task.SetHitsForTriplet(options.hits_for_triplet)
+muon_reco_task.UseXmeas(options.withXmeas)
 
 run.Run(options.firstEvent, options.firstEvent + options.nEvents)
 print("Done running")
