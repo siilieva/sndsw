@@ -571,50 +571,55 @@ class MuonReco(ROOT.FairTask) :
             
             # Sort measurements in Z
             # X meas collection for vert bars is same as reular one (ZX plane)
-            hit_z = np.concatenate([hit_collection["posXmeas"][2][hit_collection["vert"]][track_hits_ZX],
-                                    hit_collection["posXmeas"][2][~hit_collection["vert"]][track_hits_ZY]])
+            hit_z = np.concatenate([hit_collection["pos"][2][hit_collection["vert"]][track_hits_ZX],
+                                    hit_collection["pos"][2][~hit_collection["vert"]][track_hits_ZY]])
 
-            hit_A0 = np.concatenate([hit_collection["posXmeas"][0][hit_collection["vert"]][track_hits_ZX],
+            meas = np.concatenate([hit_collection["posXmeas"][0][hit_collection["vert"]][track_hits_ZX],
                                      hit_collection["posXmeas"][0][~hit_collection["vert"]][track_hits_ZY]])
-
-            hit_A1 = np.concatenate([hit_collection["posXmeas"][1][hit_collection["vert"]][track_hits_ZX],
-                                     hit_collection["posXmeas"][1][~hit_collection["vert"]][track_hits_ZY]])
             
-            hit_B0 = np.concatenate([hit_collection["BXmeas"][0][hit_collection["vert"]][track_hits_ZX],
-                                     hit_collection["BXmeas"][0][~hit_collection["vert"]][track_hits_ZY]])
+            hit_A0 = np.concatenate([hit_collection["pos"][0][hit_collection["vert"]][track_hits_ZX],
+                                     hit_collection["pos"][0][~hit_collection["vert"]][track_hits_ZY]])
 
-            hit_B1 = np.concatenate([hit_collection["BXmeas"][1][hit_collection["vert"]][track_hits_ZX],
-                                     hit_collection["BXmeas"][1][~hit_collection["vert"]][track_hits_ZY]])
+            hit_A1 = np.concatenate([hit_collection["pos"][1][hit_collection["vert"]][track_hits_ZX],
+                                     hit_collection["pos"][1][~hit_collection["vert"]][track_hits_ZY]])
             
-            hit_B2 = np.concatenate([hit_collection["BXmeas"][2][hit_collection["vert"]][track_hits_ZX],
-                                     hit_collection["BXmeas"][2][~hit_collection["vert"]][track_hits_ZY]])
+            hit_B0 = np.concatenate([hit_collection["B"][0][hit_collection["vert"]][track_hits_ZX],
+                                     hit_collection["B"][0][~hit_collection["vert"]][track_hits_ZY]])
+
+            hit_B1 = np.concatenate([hit_collection["B"][1][hit_collection["vert"]][track_hits_ZX],
+                                     hit_collection["B"][1][~hit_collection["vert"]][track_hits_ZY]])
+            
+            hit_B2 = np.concatenate([hit_collection["B"][2][hit_collection["vert"]][track_hits_ZX],
+                                     hit_collection["B"][2][~hit_collection["vert"]][track_hits_ZY]])
             
             hit_detid = np.concatenate([hit_collection["detectorID"][hit_collection["vert"]][track_hits_ZX],
                                         hit_collection["detectorID"][~hit_collection["vert"]][track_hits_ZY]])
 
-            kalman_spatial_sigma = np.concatenate([hit_collection["dXmeas"][0][hit_collection["vert"]][track_hits_ZX] / 12**0.5,
-                                                   hit_collection["dXmeas"][1][~hit_collection["vert"]][track_hits_ZY] / 12**0.5])
+            kalman_spatial_sigma = np.concatenate([hit_collection["d"][0][hit_collection["vert"]][track_hits_ZX] / 12**0.5,
+                                                   hit_collection["d"][1][~hit_collection["vert"]][track_hits_ZY] / 12**0.5])
 
             # Maximum distance. Use (d_xy/2**2 + d_z/2**2)**0.5
-            kalman_max_dis = np.concatenate([((hit_collection["dXmeas"][0][hit_collection["vert"]][track_hits_ZX]/2.)**2 +
-                                              (hit_collection["dXmeas"][2][hit_collection["vert"]][track_hits_ZX]/2.)**2)**0.5,
-                                             ((hit_collection["dXmeas"][1][~hit_collection["vert"]][track_hits_ZY]/2.)**2 +
-                                              (hit_collection["dXmeas"][2][~hit_collection["vert"]][track_hits_ZY]/2.)**2)**0.5])
+            kalman_max_dis = np.concatenate([((hit_collection["d"][0][hit_collection["vert"]][track_hits_ZX]/2.)**2 +
+                                              (hit_collection["d"][2][hit_collection["vert"]][track_hits_ZX]/2.)**2)**0.5,
+                                             ((hit_collection["d"][1][~hit_collection["vert"]][track_hits_ZY]/2.)**2 +
+                                              (hit_collection["d"][2][~hit_collection["vert"]][track_hits_ZY]/2.)**2)**0.5])
             
             hitID = 0 # Does it matter? We don't have a global hit ID.
             
             for i_z_sorted in hit_z.argsort() :
                 tp = ROOT.genfit.TrackPoint()
-                hitCov = ROOT.TMatrixDSym(7)
+                hitCov = ROOT.TMatrixDSym(8)
+                # think this should stay intact
                 hitCov[6][6] = kalman_spatial_sigma[i_z_sorted]**2
                 
-                measurement = ROOT.genfit.WireMeasurement(ROOT.TVectorD(7, array('d', [hit_A0[i_z_sorted],
+                measurement = ROOT.genfit.WirePointMeasurement(ROOT.TVectorD(8, array('d', [hit_A0[i_z_sorted],
                                                                                        hit_A1[i_z_sorted],
                                                                                        hit_z[i_z_sorted],
                                                                                        hit_B0[i_z_sorted],
                                                                                        hit_B1[i_z_sorted],
                                                                                        hit_B2[i_z_sorted],
-                                                                                       0.])),
+                                                                                       0.,
+                                                                                       meas[i_z_sorted]])),
                                                           hitCov,
                                                           1, # detid?
                                                           6, # hitid?
@@ -647,7 +652,7 @@ class MuonReco(ROOT.FairTask) :
             #print('fit trk size', len(theTrack.getPointsWithMeasurement()))
             for Mpoint in theTrack.getPointsWithMeasurement():
               i+=1
-              # this next line fails for some tracks.:-|
+              # this next line fails for some tracks if using WirePointMeasurement! :-|
               state = theTrack.getFittedState(i)
               pos = state.getPos()
               #print(i, pos[0], pos[1], pos[2])            
