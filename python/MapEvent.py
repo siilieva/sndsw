@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import ROOT, array
+ROOT.gROOT.SetBatch(True)
 import os,sys,subprocess
 import ctypes
 from array import array
@@ -75,11 +76,12 @@ ut.bookHist(h,'Nus','Number of hits in US; Nus',1005,-5,1000)
 ut.bookHist(h,'kalman_angle_zx','Angle in ZX; [mrad]',400,-200,200)
 ut.bookHist(h,'kalman_angle_zy','Angle in ZY; [mrad]',400,-200,200)
 ut.bookHist(h,'slopes','Rec track slopes; slope X [mrad]; slope Y [mrad]',200,-100,100,200,-100,100)
-ut.bookHist(h,'bs','beam spot; x[cm]; y[cm]',100,-80.,0.,100,0.,80.)
-ut.bookHist(h,'ax_zx','z-x view; z [cm]; x [cm]',100,250,600,100,-80,10)
-ut.bookHist(h,'ax_zy','z-y view; z [cm]; y [cm]',100,250,600,100,0,80)
-ut.bookHist(h,'mc_ax_zx','MC z-x view; z [cm]; x [cm]',100,0,600,100,-80,10)
-ut.bookHist(h,'mc_ax_zy','MC z-y view; z [cm]; y [cm]',100,250,600,100,0,80)
+ut.bookHist(h,'bs','beam spot; x[cm]; y[cm]',100,-90,10,100, -10, 90)
+ut.bookHist(h,'ax_zx','z-x view; z [cm]; x [cm]',1000,250,600,1000,-80,10)
+ut.bookHist(h,'ax_zy','z-y view; z [cm]; y [cm]',1000,250,600,1000,0,80)
+ut.bookHist(h,'mc_ax_zx','MC z-x view; z [cm]; x [cm]',1000,0,600,1000,-80,10)
+ut.bookHist(h,'mc_ax_zy','MC z-y view; z [cm]; y [cm]',1000,250,600,1000,0,80)
+ut.bookHist(h,'Emuons','Energy of MC muons E [GeV/c]',1000, 0, 5000)
 
 Tkey  = ROOT.std.vector('TString')()
 Ikey   = ROOT.std.vector('int')()
@@ -116,6 +118,10 @@ trks={}
 eventList ={}
 pid = {}
 procid = {}
+counter = {}
+Emuon = {}
+Eothers = {}
+cntd = {}
 
 slopeArray={}
 MCslopeArray={}
@@ -132,6 +138,7 @@ withSfnoVePoints=0
 withSfnoVeHits=0
 th=0
 th1=0
+more=0
 
 for i_event, event in enumerate(tchain) :
    for mcpoint in event.MuFilterPoint:
@@ -210,12 +217,12 @@ for i_event, event in enumerate(tchain) :
       eventList[i_event] = [] 
       eventList[i_event] = Hits[i_event]
    if i_event in eventList:
-     ut.bookHist(h,'mc_ax_zx'+str(i_event),'MC z-x view'+str(i_event)+'; z [cm]; x [cm]',100,250,600,100,-80,10)
-     ut.bookHist(h,'mc_ax_zy'+str(i_event),'MC z-y view'+str(i_event)+'; z [cm]; y [cm]',100,250,600,100,0,80)
-     ut.bookHist(h,'mcmu_ax_zx'+str(i_event),'MC muons z-x view'+str(i_event)+'; z [cm]; x [cm]',100,250,600,100,-80,10)
-     ut.bookHist(h,'mcmu_ax_zy'+str(i_event),'MC muons z-y view'+str(i_event)+'; z [cm]; y [cm]',100,250,600,100,0,80)
-     ut.bookHist(h,'pid'+str(i_event),'Pdg code; pdg code', 1000, 0, 1E6)
-     ut.bookHist(h,'procId'+str(i_event),'TMCProcess id; TMCProcess id', 50, -2, 48)
+     ut.bookHist(h,'mc_ax_zx'+str(i_event),'MC points z-x view '+str(i_event)+'; z [cm]; x [cm]',100,250,600,100,-80,10)
+     ut.bookHist(h,'mc_ax_zy'+str(i_event),'MC points z-y view '+str(i_event)+'; z [cm]; y [cm]',100,250,600,100,0,80)
+     ut.bookHist(h,'mcmu_ax_zx'+str(i_event),'primary #mu: MC points z-x view '+str(i_event)+'; z [cm]; x [cm]',100,250,600,100,-80,10)
+     ut.bookHist(h,'mcmu_ax_zy'+str(i_event),'primary #mu: MC points z-y view '+str(i_event)+'; z [cm]; y [cm]',100,250,600,100,0,80)
+     ut.bookHist(h,'pid '+str(i_event),'Pdg code; pdg code', 1000, 0, 1E6)
+     ut.bookHist(h,'procId '+str(i_event),'TMCProcess id; TMCProcess id', 50, -2, 48)
    
    MCpoints[i_event]=[]
    Nve = 0
@@ -236,16 +243,11 @@ for i_event, event in enumerate(tchain) :
        if i_event in eventList:
         h['mc_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
         h['mc_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-        if mcpoint.PdgCode()==13:
+        #primary muon
+        if mcpoint.PdgCode()==13 and mcpoint.GetTrackID() ==0 :
           h['mcmu_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
-          h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-        #h['pid'+str(i_event)].Fill(mcpoint.PdgCode())
-        if not i_event in pid: 
-          pid[i_event] = array('i')
-          procid[i_event] = array('i')
-        pid[i_event].append(mcpoint.PdgCode())
-        procid[i_event].append(event.MCTrack[mcpoint.GetTrackID()].GetProcID())
-        #h['procId'+str(i_event)].Fill(event.MCTrack[mcpoint.GetTrackID()].GetProcID()) 
+          h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())          
+
    Nsf = len(event.ScifiPoint)
    for mcpoint in event.ScifiPoint:
      # even numbers are Y (horizontal plane), odd numbers X (vertical plane
@@ -254,19 +256,37 @@ for i_event, event in enumerate(tchain) :
      if i_event in eventList:
         h['mc_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
         h['mc_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-        if mcpoint.PdgCode()==13:
+        # primary muon
+        if mcpoint.PdgCode()==13 and mcpoint.GetTrackID() ==0 :
           h['mcmu_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
-          h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-        #h['pid'+str(i_event)].Fill(mcpoint.PdgCode())
+          h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())        
+   MCpoints[i_event]=[Nve,Nsf,Nus,Ndsh,Ndsv, Nve+Nsf+Nus+Ndsh+Ndsv, Nsfv, Nsfh]
+
+   # Loop over MCTracks
+   ntrk=-1
+   for mctrack in event.MCTrack:
+      ntrk+=1
+      #primary muon
+      if mctrack.GetMotherId()==-1:
+        if not i_event in Emuon: Emuon[i_event] = 0
+        Emuon[i_event]=mctrack.GetEnergy()
+        h['Emuons'].Fill(mctrack.GetEnergy())
+        if not i_event in Eothers : Eothers[i_event] = 0
+        if not i_event in cntd : cntd[i_event] = []
+      else:
+        if mctrack.GetMotherId() not in cntd[i_event]:       
+          Eothers[i_event] += mctrack.GetEnergy()
+          cntd[i_event].append(ntrk)
         if not i_event in pid: 
           pid[i_event] = array('i')
           procid[i_event] = array('i')
-        pid[i_event].append(mcpoint.PdgCode())
-        procid[i_event].append(event.MCTrack[mcpoint.GetTrackID()].GetProcID())
-        #counter[pid]
-        #print(event.MCTrack[mcpoint.GetTrackID()].GetProcID())
-        #h['procId'+str(i_event)].Fill(event.MCTrack[mcpoint.GetTrackID()].GetProcID())     
-   MCpoints[i_event]=[Nve,Nsf,Nus,Ndsh,Ndsv, Nve+Nsf+Nus+Ndsh+Ndsv, Nsfv, Nsfh]
+        pid[i_event].append(mctrack.GetPdgCode())
+        procid[i_event].append(mctrack.GetProcID())
+        if i_event not in counter: counter[i_event] = {}
+        if pid[i_event][-1] not in counter[i_event]: counter[i_event][pid[i_event][-1]]={}
+        if procid[i_event][-1] not in counter[i_event][pid[i_event][-1]]: counter[i_event][pid[i_event][-1]][procid[i_event][-1]]=0
+        counter[i_event][pid[i_event][-1]][procid[i_event][-1]] += 1
+   if Emuon[i_event]<Eothers[i_event]: more+=1
    
    trks[i_event]=[]
    trks[i_event]=[len(event.Reco_MuonTracks)]
@@ -287,8 +307,9 @@ for i in range(len(MCpoints)):
    if MCpoints[i][3]>2 and MCpoints[i][4]>2:
      withDSPoints+=1
    if Hits[i][3]>2 and Hits[i][4]>2:
-     withDSHits+=1
+     withDSHits+=1     
      if Hits[i][0]!=0:
+       withVeDSHits+=1
        withVeDSHits+=1
      if trks[i][0] < 1 : 
        why+=1#print(i, trks[i][0])
@@ -330,11 +351,8 @@ if False:
       if not S.isFitConverged(): print(i)   
 
 file = ROOT.TFile('rec_muons.root', 'recreate')
-#h['simE'].Draw()
-#h['simE'].Write()
+h['Emuons'].Write()
 h['bs'].Write()
-#h['us'].Write()
-#h['ds'].Write()
 h['slopes'].Write()
 #h['simslopes'].Write()
 #h['resslXZ'].Write()
@@ -352,31 +370,45 @@ h['Nve'].Write()
 h['Nds'].Write()
 h['Nus'].Write()
 print(len(eventList))
-for i in range(200):
-  if i not in eventList: continue
-  ut.bookCanvas(h,'strangeEvt'+str(i),' ',1024,1024,2,3)
-  h['strangeEvt'+str(i)].cd(1)
+for i in eventList:#range(500):
+  #if i not in eventList: continue
+  ut.bookCanvas(h,'strangeEvt '+str(i),' ',1024,768,2,3)
+  h['strangeEvt '+str(i)].cd(1)
   h['mc_ax_zx'+str(i)].Draw('colz')
-  h['strangeEvt'+str(i)].cd(2)
+  h['strangeEvt '+str(i)].cd(2)
   h['mc_ax_zy'+str(i)].Draw('colz')
-  h['strangeEvt'+str(i)].cd(3)
+  h['strangeEvt '+str(i)].cd(3)
   h['mcmu_ax_zx'+str(i)].Draw('*')
-  h['strangeEvt'+str(i)].cd(4)
+  h['strangeEvt '+str(i)].cd(4)
   h['mcmu_ax_zy'+str(i)].Draw('*')
-  h['strangeEvt'+str(i)].cd(5)
+  h['strangeEvt '+str(i)].cd(5)
   gr = ROOT.TGraph(len(pid[i]), pid[i], procid[i])
   gr.SetMarkerColor(4)
-  gr.SetMarkerStyle(21)
+  gr.SetMarkerStyle(7)
   gr.SetTitle('TMCProcess vs PID')
   gr.GetXaxis().SetTitle('Pdg Code')
   gr.GetYaxis().SetTitle('TMCProcess id')
-  gr.Draw('AP')
-  #h['pid'+str(i)].Draw('l')
-  #h['strangeEvt'+str(i)].cd(6)
-  #h['procId'+str(i)].Draw('l') 
-  h['strangeEvt'+str(i)].Write() 
+  gr.Draw('AP')  
+  h['strangeEvt '+str(i)].cd(6)
+  txt=ROOT.TLatex()
+  txt.DrawLatexNDC(0.4,0.95,"Event %d"%i)
+  txt.DrawLatexNDC(0.01,0.85,"E_{primary #mu } = %5.2f [GeV/c]"%Emuon[i])
+  if Emuon[i]<Eothers[i]:
+    print('check that event',i)
+    txt.DrawLatexNDC(0.5,0.85,"#Sigma(E_{not primary #mu }) = #color[2]{%5.2f} [GeV/c]"%Eothers[i])
+  else: 
+    txt.DrawLatexNDC(0.5,0.85,"#Sigma(E_{not primary #mu }) = %5.2f [GeV/c]"%Eothers[i])
+  txt.DrawLatexNDC(0.01,0.75,"Digi_hits in event: #color[2]{Veto %d } #color[4]{SciFi %d } #color[8]{US %d } #color[7]{DS %d }"%(Hits[i][0], Hits[i][1], Hits[i][2], Hits[i][3]+Hits[i][4]))
+  k=-1
+  for ipid in counter[i] :
+      for iproc in counter[i][ipid] :
+        k+=1
+        txt.DrawLatexNDC(0.5,0.7-k*0.1,"pid %d ProcID %d Number %d"%(ipid, iproc, counter[i][ipid][iproc]))
+  txt.Draw()
+  h['strangeEvt '+str(i)].Write() 
      
 print('N mctrk with points', withPoints, 'N mctrk with Veto points', withVePoints,'N mctrk with DS points', withDSPoints, 'N mctrk with Veto and DS points', withVeDSPoints, 'with Ve hits', withVeHits, 'with DS hits', withDSHits, 'with Veto and DS hits', withVeDSHits, 'not rec', why, 'rec', yes)
 print('N mctrk with SciFi, but no Ve points', withSfnoVePoints, 'N with SciFi, but no Ve hits', withSfnoVeHits)
 print(th, th1)
+print('N events with Eothers>Emu ', more)
 print('Done')
