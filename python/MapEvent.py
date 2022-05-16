@@ -12,6 +12,7 @@ import numpy as np
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("-f", "--inputFile", dest="inputFile", help="single input file", required=False, default="sndLHC.Ntuple-TGeant4_dig.root")
+parser.add_argument("-g", "--geoFile", dest="geoFile", help="geofile", required=True)
 #parser.add_argument("-d", "--inputDigiFile", dest="inputDigiFile", help="single  digi input file", required=False, default="sndLHC.Ntuple-TGeant4_dig.root")
 #parser.add_argument("-n", "--nEvents", dest="nEvents", help="number of events to process", default=100000)
 #parser.add_argument("-s", "--start", dest="start", type=int,help="file name with $*$", required=False,default=False)
@@ -63,6 +64,21 @@ void fixRoot(std::vector<genfit::TrackPoint*>& points, std::vector<int>& d,std::
 
 options = parser.parse_args()
 h={} # histogram storage
+
+import SndlhcGeo
+geo = SndlhcGeo.GeoInterface(options.geoFile)
+
+detSize = {}
+si = geo.snd_geo.Scifi
+detSize[0] =[si.channel_width, si.channel_width, si.scifimat_z ]
+mi = geo.snd_geo.MuFilter
+detSize[1] =[mi.VetoBarX/2,                   mi.VetoBarY/2,            mi.VetoBarZ/2]
+detSize[2] =[mi.UpstreamBarX/2,           mi.UpstreamBarY/2,    mi.UpstreamBarZ/2]
+detSize[3] =[mi.DownstreamBarX_ver/2,mi.DownstreamBarY/2,mi.DownstreamBarZ/2]
+
+minSipmMult = 1
+
+nav = ROOT.gGeoManager.GetCurrentNavigator()
 
 ut.bookHist(h,'Nsfv','Number of hits in Scifi vertical planes; N_sf V',1005,-5,1000)
 ut.bookHist(h,'Nsfh','Number of hits in Scifi horizontal planes; N_sf H',1005,-5,1000)
@@ -139,6 +155,7 @@ withVeDSPoints=0
 withVeDSHits=0
 withSfnoVePoints=0
 withSfnoVeHits=0
+withMuHits=0
 th=0
 th1=0
 more=0
@@ -222,8 +239,7 @@ for i_event, event in enumerate(tchain) :
      #ut.bookHist(h,'procid_z '+str(i_event),'MC: TMCProcess vs zStart; zStart [cm]; procID',1000,250,600,51,-1,50)
      ut.bookHist(h,'mcnonmu_ax_zx'+str(i_event),'non-#mu particles in detector region: MCTrack start points z-x view '+str(i_event)+'; z [cm]; x [cm]',100,250,600,100,-90,10)
      ut.bookHist(h,'mcnonmu_ax_zy'+str(i_event),'non-#mu particles in detector region: MCTrack start points z-y view '+str(i_event)+'; z [cm]; y [cm]',100,250,600,100,0,80)
-     
-   
+
    MCpoints[i_event]=[]
    Nve = 0
    Nus = 0
@@ -273,6 +289,7 @@ for i_event, event in enumerate(tchain) :
    ntrk=-1
    for mctrack in event.MCTrack :      
       ntrk+=1
+      #if i_event==3319 :print(ntrk, mctrack.GetMotherId())
       #primary muon
       if mctrack.GetMotherId()==-1:
         h['genEmuons'].Fill(mctrack.GetEnergy())
@@ -283,12 +300,15 @@ for i_event, event in enumerate(tchain) :
           h['genEmuons_actionEvt'].Fill(mctrack.GetEnergy())
         if not i_event in Emuon: Emuon[i_event] = 0
         Emuon[i_event]=mctrack.GetEnergy()
-        if not i_event in Eothers : Eothers[i_event] = 0
+        if not i_event in Eothers :         
+          Eothers[i_event] = 0
         if not i_event in cntd : cntd[i_event] = []
-      else:
+      else:        
         # take non-muons that are produced in detector region in Z
-        if mctrack.GetMotherId() not in cntd[i_event] and mctrack.GetStartZ()>200:
+        if mctrack.GetMotherId()==0 : #and mctrack.GetStartZ()>200:
           Eothers[i_event] += mctrack.GetEnergy()
+          if i_event==3319 and mctrack.GetEnergy()>100:print(ntrk, mctrack.GetMotherId(), mctrack.GetEnergy())
+          #if i_event==10007 : print(Eothers[i_event], mctrack.GetEnergy(), ntrk, mctrack.GetPdgCode(),mctrack.GetMotherId())
           cntd[i_event].append(ntrk)
         if i_event in eventList:
           #h['procid_z '+str(i_event)].Fill(mctrack.GetStartZ(), mctrack.GetProcID())
@@ -308,6 +328,7 @@ for i_event, event in enumerate(tchain) :
    if Emuon[i_event]<Eothers[i_event]: 
       more+=1
       print('cc', i_event)
+   #if i_event==3319: print(Eothers[i_event] )
    
    trks[i_event]=[]
    trks[i_event]=[len(event.Reco_MuonTracks)]
@@ -321,6 +342,7 @@ for i in range(len(MCpoints)):
      withVePoints+=1
      if MCpoints[i][3]>2 and MCpoints[i][4]>2:
        withVeDSPoints+=1
+   if Hits[i][5]!=0: withMuHits+=1
    if Hits[i][0]!=0:
      withVeHits+=1
    if Hits[i][0]==0 :
@@ -349,28 +371,74 @@ for i in range(len(MCpoints)):
    #TO BE DELETED   
    if (MCpoints[i][3]+MCpoints[i][4]+MCpoints[i][2])>40:
      th1+=1
-   if (Hits[i][3]+Hits[i][4]+Hits[i][2])>40:
-     #print(i)
-     #print(Hits[i][1],i)
+   if (Hits[i][3]+Hits[i][4]+Hits[i][2])>40:     
      th+=1
-if False:     
- for i, event in enumerate(tchain) :
-   if i!=9909: continue
-   for aHit in event.Digi_MuFilterHits:
-            # only DS hits
-            if aHit.GetSystem() != 3: continue
-            detID = aHit.GetDetectorID()            
-            #if detID>31999: continue
-            sumSignal = map2Dict(aHit,'SumOfSignals')
-            print('sumSignals', sumSignal["Sum"], 'mcpoints:')
-            for mc_point_i, _ in event.Digi_MuFilterHits2MCPoints[0].wList(detID) :
-                print(aHit.isVertical(), detID, event.MuFilterPoint[mc_point_i].GetX(), event.MuFilterPoint[mc_point_i].GetY(),event.MuFilterPoint[mc_point_i].GetZ(),  event.MuFilterPoint[mc_point_i].PdgCode())
- for i, event in enumerate(tchain) :
-   #if i!=9909: continue 
+
+p = {}
+pe = {}
+A,B = ROOT.TVector3(),ROOT.TVector3()
+trans2local = False
+for i, event in enumerate(tchain) :   
    for  aTrack in event.Reco_MuonTracks:
       S = aTrack.getFitStatus()
-      if not S.isFitConverged(): print(i)   
-
+      if not S.isFitConverged(): print(i)
+   if i not in eventList : continue
+   print (i)
+   p[i] = {}
+   pe[i] = {}
+   p[i]['xzX'] = array('d')
+   p[i]['yzY'] = array('d')
+   p[i]['xzZ'] = array('d')
+   p[i]['yzZ'] = array('d')
+   pe[i]['xzX'] = array('d')
+   pe[i]['yzY'] = array('d')
+   pe[i]['xzZ'] = array('d')
+   pe[i]['yzZ'] = array('d')
+   digis = []
+   if event.FindBranch("Digi_ScifiHits"): digis.append(event.Digi_ScifiHits)
+   if event.FindBranch("Digi_MuFilterHits"): digis.append(event.Digi_MuFilterHits)
+   if event.FindBranch("Digi_MuFilterHit"): digis.append(event.Digi_MuFilterHit)
+   empty = True
+   for x in digis:
+     if x.GetEntries()>0: empty = False
+   if empty: continue
+   systems = {1:'Veto',2:'US',3:'DS',0:'Scifi'}
+   
+   for D in digis:
+      for digi in D:
+         detID = digi.GetDetectorID()
+         sipmMult = 1
+         if digi.GetName()  == 'MuFilterHit':
+            system = digi.GetSystem()
+            geo.modules['MuFilter'].GetPosition(detID,A,B)
+            sipmMult = len(digi.GetAllSignals())
+            if sipmMult<minSipmMult and (system==1 or system==2): continue
+            if trans2local:
+                curPath = nav.GetPath()
+                tmp = curPath.rfind('/')
+                nav.cd(curPath[:tmp])
+         else:
+            geo.modules['Scifi'].GetSiPMPosition(detID,A,B)
+            if trans2local:
+                curPath = nav.GetPath()
+                tmp = curPath.rfind('/')
+                nav.cd(curPath[:tmp])
+            system = 0
+         globA,locA = array('d',[A[0],A[1],A[2]]),array('d',[A[0],A[1],A[2]])
+         if trans2local:   nav.MasterToLocal(globA,locA)
+         Z = A[2]
+         if digi.isVertical():
+                   p[i]['xzZ'].append(Z)
+                   p[i]['xzX'].append(locA[0])
+                   pe[i]['xzX'].append(detSize[system][0])
+                   pe[i]['xzZ'].append(detSize[system][2])
+                   
+         else:                         
+                   p[i]['yzZ'].append(Z)
+                   p[i]['yzY'].append(locA[1])
+                   pe[i]['yzY'].append(detSize[system][1])
+                   pe[i]['yzZ'].append(detSize[system][2])
+         
 file = ROOT.TFile('rec_muons.root', 'recreate')
 h['genEmuons'].Write()
 h['Emuons'].Write()
@@ -400,17 +468,37 @@ for i in eventList:#range(500):
   #if i not in eventList: continue
   ut.bookCanvas(h,'actionEvt '+str(i),' ',1024,768,2,4)
   h['actionEvt '+str(i)].cd(1)
-  h['mc_ax_zx'+str(i)].Draw('colz')
+  #h['mc_ax_zx'+str(i)].Draw('colz')
+  if len(p[i]['xzX']) > 0:
+    grXZ = ROOT.TGraphErrors(len(p[i]['xzX']), p[i]['xzZ'], p[i]['xzX'], pe[i]['xzZ'], pe[i]['xzX'])
+    grXZ.SetMarkerColor(4)
+    grXZ.SetMarkerStyle(7)
+    grXZ.SetTitle('Hits in x-z plane')
+    grXZ.GetXaxis().SetRangeUser(250,600)
+    grXZ.GetYaxis().SetRangeUser(-90,10)    
+    grXZ.GetXaxis().SetTitle('z [cm]')
+    grXZ.GetYaxis().SetTitle('x [cm]')
+    grXZ.Draw('AP')  
   h['actionEvt '+str(i)].cd(2)
-  h['mc_ax_zy'+str(i)].Draw('colz')
+  #h['mc_ax_zy'+str(i)].Draw('colz')
+  if len(p[i]['yzY']) > 0:
+   grYZ = ROOT.TGraphErrors(len(p[i]['yzY']), p[i]['yzZ'], p[i]['yzY'], pe[i]['yzZ'], pe[i]['yzY'])
+   grYZ.SetMarkerColor(4)
+   grYZ.SetMarkerStyle(7)
+   grYZ.SetTitle('Hits in y-z plane')
+   grYZ.GetXaxis().SetRangeUser(250,600)
+   grYZ.GetYaxis().SetRangeUser(0,80)
+   grYZ.GetXaxis().SetTitle('z [cm]')
+   grYZ.GetYaxis().SetTitle('y [cm]')
+   grYZ.Draw('AP') 
   h['actionEvt '+str(i)].cd(3)
-  h['mcmu_ax_zx'+str(i)].Draw('*')
+  h['mcmu_ax_zx'+str(i)].Draw('colz')
   h['actionEvt '+str(i)].cd(4)
-  h['mcmu_ax_zy'+str(i)].Draw('*')
+  h['mcmu_ax_zy'+str(i)].Draw('colz')
   h['actionEvt '+str(i)].cd(5)
-  h['mcnonmu_ax_zx'+str(i)].Draw('*')
+  h['mcnonmu_ax_zx'+str(i)].Draw('colz')
   h['actionEvt '+str(i)].cd(6)
-  h['mcnonmu_ax_zy'+str(i)].Draw('*')
+  h['mcnonmu_ax_zy'+str(i)].Draw('colz')
   h['actionEvt '+str(i)].cd(7)
   gr = ROOT.TGraph(len(pid[i]), pid[i], procid[i])
   gr.SetMarkerColor(4)
@@ -425,7 +513,7 @@ for i in eventList:#range(500):
   txt.DrawLatexNDC(0.05,0.85,"E_{primary #mu } = %5.2f [GeV/c]"%Emuon[i])
   if Emuon[i]<Eothers[i]:
     print('check that event',i)
-    txt.DrawLatexNDC(0.5,0.85,"#Sigma(E_{not primary #mu in det }) = #color[2]{%5.2f} [GeV/c]"%Eothers[i])
+    txt.DrawLatexNDC(0.5,0.85,"#Sigma(E_{primary #mu daughters }) = #color[2]{%5.2f} [GeV/c]"%Eothers[i])
   else: 
     txt.DrawLatexNDC(0.5,0.85,"#Sigma(E_{not primary #mu in det}) = %5.2f [GeV/c]"%Eothers[i])
   txt.DrawLatexNDC(0.05,0.65,"Digi_hits in event: #color[2]{Veto %d } #color[4]{SciFi %d } #color[8]{US %d } #color[7]{DS %d }"%(Hits[i][0], Hits[i][1], Hits[i][2], Hits[i][3]+Hits[i][4]))
@@ -439,6 +527,7 @@ for i in eventList:#range(500):
     
 print('N mctrk with points', withPoints, 'N mctrk with Veto points', withVePoints,'N mctrk with DS points', withDSPoints, 'N mctrk with Veto and DS points', withVeDSPoints, 'with Ve hits', withVeHits, 'with DS hits', withDSHits, 'with Veto and DS hits', withVeDSHits, 'not rec', why, 'rec', yes)
 print('N mctrk with SciFi, but no Ve points', withSfnoVePoints, 'N with SciFi, but no Ve hits', withSfnoVeHits)
+print('N events with muon hits in det', withMuHits)
 print(th, th1)
 print('N events with Eothers>Emu ', more)
 print('N action events', len(eventList), 'of which primary muon left points in det in ', h['Emuons_actionEvt'].GetEntries())
