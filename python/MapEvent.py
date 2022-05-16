@@ -91,6 +91,8 @@ ut.bookHist(h,'Nus','Number of hits in US; Nus',1005,-5,1000)
 
 ut.bookHist(h,'kalman_angle_zx','Angle in ZX; [mrad]', 400,-200,200)
 ut.bookHist(h,'kalman_angle_zy','Angle in ZY; [mrad]', 200,-200,200)
+ut.bookHist(h,'kalman_res_zx','Slope resolution in ZX; MC true slopeXZ- rec slopeXZ [mrad]', 2000,-1000,1000)
+ut.bookHist(h,'kalman_res_zy','Slope resolution in ZY; MC true slopeYZ- rec slopeYZ [mrad]', 2000,-1000,1000)
 ut.bookHist(h,'slopes','Rec track slopes; slope X [mrad]; slope Y [mrad]',200,-100,100,200,-100,100)
 ut.bookHist(h,'bs','beam spot; x[cm]; y[cm]',100,-90,10,100, -10, 90)
 ut.bookHist(h,'ax_zx','Measured points on rec track z-x view; z [cm]; x [cm]',1000,250,600,1000,-90,10)
@@ -140,7 +142,6 @@ procid = {}
 counter = {}
 Emuon = {}
 Eothers = {}
-cntd = {}
 
 slopeArray={}
 MCslopeArray={}
@@ -161,7 +162,9 @@ th1=0
 more=0
 
 for i_event, event in enumerate(tchain) :
+   ntrk=-1
    for aTrack in event.Reco_MuonTracks:
+        ntrk+=1
         stateTrack = aTrack.getFittedState()
         posTrack   = stateTrack.getPos()
         rc = h['bs'].Fill(posTrack.x(),posTrack.y())
@@ -172,6 +175,8 @@ for i_event, event in enumerate(tchain) :
         #h['theta'].Fill(asin((mom.)**2+mom.Y()**2)**0.5/mom.Mag()))
         h['kalman_angle_zx'].Fill(1000*math.atan(mom.X()/mom.Z()))
         h['kalman_angle_zy'].Fill(1000*math.atan(mom.Y()/mom.Z()))
+        if i_event not in slopeArray : slopeArray[i_event] = []
+        slopeArray[i_event]=[1000*math.atan(mom.X()/mom.Z()), 1000*math.atan(mom.Y()/mom.Z())]
         points = aTrack.getPoints() # 1st points or all
         points_z = []
         points_x = []
@@ -286,14 +291,13 @@ for i_event, event in enumerate(tchain) :
    MCpoints[i_event]=[Nve,Nsf,Nus,Ndsh,Ndsv, Nve+Nsf+Nus+Ndsh+Ndsv, Nsfv, Nsfh]
 
    # Loop over MCTracks
-   ntrk=-1
    for mctrack in event.MCTrack :      
-      ntrk+=1
-      #if i_event==3319 :print(ntrk, mctrack.GetMotherId())
       #primary muon
       if mctrack.GetMotherId()==-1:
         h['genEmuons'].Fill(mctrack.GetEnergy())
         if hasPrMu : h['Emuons'].Fill(mctrack.GetEnergy())
+        if i_event not in MCslopeArray : MCslopeArray[i_event] = []
+        MCslopeArray[i_event]= [1000*math.atan(mctrack.GetPx()/mctrack.GetPz()), 1000*math.atan(mctrack.GetPy()/mctrack.GetPz())]        
         if i_event in eventList :
           if h['mcmu_ax_zx'+str(i_event)].GetEntries()+h['mcmu_ax_zy'+str(i_event)].GetEntries()>0 : h['Emuons_actionEvt'].Fill(mctrack.GetEnergy())
           else: print('action event with no mu in det', i_event)
@@ -301,15 +305,12 @@ for i_event, event in enumerate(tchain) :
         if not i_event in Emuon: Emuon[i_event] = 0
         Emuon[i_event]=mctrack.GetEnergy()
         if not i_event in Eothers :         
-          Eothers[i_event] = 0
-        if not i_event in cntd : cntd[i_event] = []
+          Eothers[i_event] = 0        
       else:        
         # take non-muons that are produced in detector region in Z
         if mctrack.GetMotherId()==0 : #and mctrack.GetStartZ()>200:
           Eothers[i_event] += mctrack.GetEnergy()
-          if i_event==3319 and mctrack.GetEnergy()>100:print(ntrk, mctrack.GetMotherId(), mctrack.GetEnergy())
-          #if i_event==10007 : print(Eothers[i_event], mctrack.GetEnergy(), ntrk, mctrack.GetPdgCode(),mctrack.GetMotherId())
-          cntd[i_event].append(ntrk)
+          if i_event==3319 and mctrack.GetEnergy()>100:print(ntrk, mctrack.GetMotherId(), mctrack.GetEnergy())          
         if i_event in eventList:
           #h['procid_z '+str(i_event)].Fill(mctrack.GetStartZ(), mctrack.GetProcID())
           h['mcnonmu_ax_zx'+str(i_event)].Fill(mctrack.GetStartZ(), mctrack.GetStartX())
@@ -430,14 +431,19 @@ for i, event in enumerate(tchain) :
          if digi.isVertical():
                    p[i]['xzZ'].append(Z)
                    p[i]['xzX'].append(locA[0])
-                   pe[i]['xzX'].append(detSize[system][0])
-                   pe[i]['xzZ'].append(detSize[system][2])
+                   pe[i]['xzX'].append(0)#detSize[system][0])
+                   pe[i]['xzZ'].append(0)#detSize[system][2])
                    
          else:                         
                    p[i]['yzZ'].append(Z)
                    p[i]['yzY'].append(locA[1])
-                   pe[i]['yzY'].append(detSize[system][1])
-                   pe[i]['yzZ'].append(detSize[system][2])
+                   pe[i]['yzY'].append(0)#detSize[system][1])
+                   pe[i]['yzZ'].append(0)#detSize[system][2])
+
+for i in slopeArray :
+  if i in MCslopeArray :
+      h['kalman_res_zx'].Fill(MCslopeArray[i][0] - slopeArray[i][0])
+      h['kalman_res_zy'].Fill(MCslopeArray[i][1] - slopeArray[i][1])
          
 file = ROOT.TFile('rec_muons.root', 'recreate')
 h['genEmuons'].Write()
@@ -447,14 +453,14 @@ h['Emuons_actionEvt'].Write()
 h['bs'].Write()
 h['slopes'].Write()
 #h['simslopes'].Write()
-#h['resslXZ'].Write()
-#h['resslYZ'].Write()
 h['ax_zx'].Write()
 h['ax_zy'].Write()
 h['mc_ax_zx'].Write()
 h['mc_ax_zy'].Write()
 h['kalman_angle_zx'].Write()
 h['kalman_angle_zy'].Write()
+h['kalman_res_zx'].Write()
+h['kalman_res_zy'].Write()
 h['Nsf'].Write()
 h['Nsfh'].Write()
 h['Nsfv'].Write()
@@ -472,7 +478,8 @@ for i in eventList:#range(500):
   if len(p[i]['xzX']) > 0:
     grXZ = ROOT.TGraphErrors(len(p[i]['xzX']), p[i]['xzZ'], p[i]['xzX'], pe[i]['xzZ'], pe[i]['xzX'])
     grXZ.SetMarkerColor(4)
-    grXZ.SetMarkerStyle(7)
+    grXZ.SetMarkerSize(0.9)
+    grXZ.SetMarkerStyle(20)
     grXZ.SetTitle('Hits in x-z plane')
     grXZ.GetXaxis().SetRangeUser(250,600)
     grXZ.GetYaxis().SetRangeUser(-90,10)    
@@ -484,7 +491,8 @@ for i in eventList:#range(500):
   if len(p[i]['yzY']) > 0:
    grYZ = ROOT.TGraphErrors(len(p[i]['yzY']), p[i]['yzZ'], p[i]['yzY'], pe[i]['yzZ'], pe[i]['yzY'])
    grYZ.SetMarkerColor(4)
-   grYZ.SetMarkerStyle(7)
+   grYZ.SetMarkerSize(0.9)
+   grYZ.SetMarkerStyle(20)
    grYZ.SetTitle('Hits in y-z plane')
    grYZ.GetXaxis().SetRangeUser(250,600)
    grYZ.GetYaxis().SetRangeUser(0,80)
@@ -492,17 +500,19 @@ for i in eventList:#range(500):
    grYZ.GetYaxis().SetTitle('y [cm]')
    grYZ.Draw('AP') 
   h['actionEvt '+str(i)].cd(3)
-  h['mcmu_ax_zx'+str(i)].Draw('colz')
+  h['mcmu_ax_zx'+str(i)].SetMarkerStyle(7)
+  h['mcmu_ax_zx'+str(i)].Draw('P')
   h['actionEvt '+str(i)].cd(4)
-  h['mcmu_ax_zy'+str(i)].Draw('colz')
+  h['mcmu_ax_zy'+str(i)].SetMarkerStyle(7)
+  h['mcmu_ax_zy'+str(i)].Draw('P')
   h['actionEvt '+str(i)].cd(5)
   h['mcnonmu_ax_zx'+str(i)].Draw('colz')
   h['actionEvt '+str(i)].cd(6)
   h['mcnonmu_ax_zy'+str(i)].Draw('colz')
   h['actionEvt '+str(i)].cd(7)
   gr = ROOT.TGraph(len(pid[i]), pid[i], procid[i])
-  gr.SetMarkerColor(4)
-  gr.SetMarkerStyle(7)
+  gr.SetMarkerColor(ROOT.kRed)
+  gr.SetMarkerStyle(20)
   gr.SetTitle('TMCProcess vs PID')
   gr.GetXaxis().SetTitle('Pdg Code')
   gr.GetYaxis().SetTitle('TMCProcess id')
@@ -515,7 +525,7 @@ for i in eventList:#range(500):
     print('check that event',i)
     txt.DrawLatexNDC(0.5,0.85,"#Sigma(E_{primary #mu daughters }) = #color[2]{%5.2f} [GeV/c]"%Eothers[i])
   else: 
-    txt.DrawLatexNDC(0.5,0.85,"#Sigma(E_{not primary #mu in det}) = %5.2f [GeV/c]"%Eothers[i])
+    txt.DrawLatexNDC(0.5,0.85,"#Sigma(E_{primary #mu daughters}) = %5.2f [GeV/c]"%Eothers[i])
   txt.DrawLatexNDC(0.05,0.65,"Digi_hits in event: #color[2]{Veto %d } #color[4]{SciFi %d } #color[8]{US %d } #color[7]{DS %d }"%(Hits[i][0], Hits[i][1], Hits[i][2], Hits[i][3]+Hits[i][4]))
   k=-1
   for ipid in counter[i] :
