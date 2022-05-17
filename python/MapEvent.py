@@ -104,6 +104,14 @@ ut.bookHist(h,'genEmuons','Energy of all MC muons at scoring plane; E [GeV/c]',5
 ut.bookHist(h,'Emuons_actionEvt','Action-on event: Energy of MC muons with points in the detector; E [GeV/c]',500, 0, 5000)
 ut.bookHist(h,'genEmuons_actionEvt','Action-on event: Energy of MC muons at scoring plane; E [GeV/c]',500, 0, 5000)
 
+ut.bookHist(h,'Taction','MC: Time difference btw primary muon start T and products startT; T_diff [ns]',2005,-5,2000)
+ut.bookHist(h,'Taction_pid','MC: Time difference btw primary muon start T and products startT vs product PdgCode; daughter pid; T_diff [ns]',6000,-3000,3000,2005,-5,2000)
+ut.bookHist(h,'Taction_procid','MC: Time difference btw primary muon start T and products startT vs TMCProcess id; procID; T_diff [ns]',50,-2,48, 2005,-5,2000)
+ut.bookHist(h,'Taction_mufi','MC: Time difference btw MuFilter points; T_diff [ns]',2005,-5,2000)
+ut.bookHist(h,'Taction_scifi','MC: Time difference btw SciFi points; T_diff [ns]',2005,-5,2000)
+ut.bookHist(h,'allActionProcIds','TMCProcess id; TMCProcess id', 50, -2, 48)
+
+
 Tkey  = ROOT.std.vector('TString')()
 Ikey   = ROOT.std.vector('int')()
 Value = ROOT.std.vector('float')()
@@ -252,6 +260,7 @@ for i_event, event in enumerate(tchain) :
    Ndsh = 0
    Ndsv = 0
    hasPrMu = False
+   prev = 9999999999.
    for mcpoint in event.MuFilterPoint:
      #print(mcpoint.GetDetectorID(), mcpoint.GetDetectorID()/10000)
      h['mc_ax_zx'].Fill(mcpoint.GetZ(), mcpoint.GetX())
@@ -264,30 +273,44 @@ for i_event, event in enumerate(tchain) :
        #print(mcpoint.GetDetectorID(), (mcpoint.GetDetectorID()%30000)%1000)
        if (mcpoint.GetDetectorID()%30000)%1000 > 60: Ndsv+=1
        else : Ndsh+=1
-     if mcpoint.PdgCode()==13 and mcpoint.GetTrackID()==0 : hasPrMu = True
+     if abs(mcpoint.PdgCode())==13 and mcpoint.GetTrackID()==0 : hasPrMu = True
      if i_event in eventList:
+       #primary muon
+       if abs(mcpoint.PdgCode())==13 and mcpoint.GetTrackID()==0 :
+        h['mcmu_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
+        h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
+        if i_event ==2004: print("before" ,mcpoint.GetTime())
+        if mcpoint.GetTime() < prev : 
+           t_mufi=mcpoint.GetTime()
+           prev = t_mufi
+           if i_event==2004: print('Start', t_mufi)
        h['mc_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
        h['mc_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-       #primary muon
-       if mcpoint.PdgCode()==13 and mcpoint.GetTrackID()==0 :
-        h['mcmu_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
-        h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())          
+       h['Taction_mufi'].Fill(t_mufi-mcpoint.GetTime())
+       if i_event==2004: print(mcpoint.GetTime())         
 
    Nsf = len(event.ScifiPoint)
+   prev = 9999999999.
    for mcpoint in event.ScifiPoint:
      h['mc_ax_zx'].Fill(mcpoint.GetZ(), mcpoint.GetX())
      h['mc_ax_zy'].Fill(mcpoint.GetZ(), mcpoint.GetY())
-     if mcpoint.PdgCode()==13 and mcpoint.GetTrackID()==0 : hasPrMu = True
+     if abs(mcpoint.PdgCode())==13 and mcpoint.GetTrackID()==0 : hasPrMu = True
      # even numbers are Y (horizontal plane), odd numbers X (vertical plane
      if (mcpoint.GetDetectorID()%1000+(mcpoint.GetDetectorID()%10000)//1000*128 )%2 == 0: Nsfh+=1
      else: Nsfv+=1
      if i_event in eventList:
+        # primary muon
+        if abs(mcpoint.PdgCode())==13 and mcpoint.GetTrackID()==0 :          
+          h['mcmu_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
+          h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
+          if mcpoint.GetTime() < prev : 
+            t_scifi=mcpoint.GetTime()
+            prev = t_scifi
+            #print(i_event, "once")
         h['mc_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
         h['mc_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-        # primary muon
-        if mcpoint.PdgCode()==13 and mcpoint.GetTrackID()==0 :          
-          h['mcmu_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
-          h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())        
+        h['Taction_scifi'].Fill(t_scifi-mcpoint.GetTime())
+                          
    MCpoints[i_event]=[Nve,Nsf,Nus,Ndsh,Ndsv, Nve+Nsf+Nus+Ndsh+Ndsv, Nsfv, Nsfh]
 
    # Loop over MCTracks
@@ -295,6 +318,7 @@ for i_event, event in enumerate(tchain) :
       #primary muon
       if mctrack.GetMotherId()==-1:
         h['genEmuons'].Fill(mctrack.GetEnergy())
+        t_muon = mctrack.GetStartT()
         if hasPrMu : h['Emuons'].Fill(mctrack.GetEnergy())
         if i_event not in MCslopeArray : MCslopeArray[i_event] = []
         MCslopeArray[i_event]= [1000*math.atan(mctrack.GetPx()/mctrack.GetPz()), 1000*math.atan(mctrack.GetPy()/mctrack.GetPz())]        
@@ -306,7 +330,10 @@ for i_event, event in enumerate(tchain) :
         Emuon[i_event]=mctrack.GetEnergy()
         if not i_event in Eothers :         
           Eothers[i_event] = 0        
-      else:        
+      else:
+        h['Taction'].Fill(mctrack.GetStartT() - t_muon)   
+        h['Taction_pid'].Fill(mctrack.GetPdgCode(), mctrack.GetStartT() - t_muon)   
+        h['Taction_procid'].Fill(mctrack.GetProcID(), mctrack.GetStartT() - t_muon)      
         # take non-muons that are produced in detector region in Z
         if mctrack.GetMotherId()==0 : #and mctrack.GetStartZ()>200:
           Eothers[i_event] += mctrack.GetEnergy()
@@ -320,6 +347,7 @@ for i_event, event in enumerate(tchain) :
           procid[i_event] = array('i')
         pid[i_event].append(mctrack.GetPdgCode())
         procid[i_event].append(mctrack.GetProcID())
+        h['allActionProcIds'].Fill(mctrack.GetProcID())
         if i_event not in counter: counter[i_event] = {}          
         if pid[i_event][-1] not in counter[i_event]: 
           counter[i_event][pid[i_event][-1]]={}
@@ -469,6 +497,12 @@ h['Ndsv'].Write()
 h['Nve'].Write()
 h['Nds'].Write()
 h['Nus'].Write()
+h['Taction'].Write()
+h['Taction_pid'].Write()
+h['Taction_procid'].Write()
+h['Taction_mufi'].Write()
+h['Taction_scifi'].Write()
+h['allActionProcIds'].Write()
 
 for i in eventList:#range(500):
   #if i not in eventList: continue
@@ -478,27 +512,25 @@ for i in eventList:#range(500):
   if len(p[i]['xzX']) > 0:
     grXZ = ROOT.TGraphErrors(len(p[i]['xzX']), p[i]['xzZ'], p[i]['xzX'], pe[i]['xzZ'], pe[i]['xzX'])
     grXZ.SetMarkerColor(4)
-    grXZ.SetMarkerSize(0.9)
-    grXZ.SetMarkerStyle(20)
+    grXZ.SetMarkerStyle(7)
     grXZ.SetTitle('Hits in x-z plane')
     grXZ.GetXaxis().SetRangeUser(250,600)
     grXZ.GetYaxis().SetRangeUser(-90,10)    
     grXZ.GetXaxis().SetTitle('z [cm]')
     grXZ.GetYaxis().SetTitle('x [cm]')
-    grXZ.Draw('AP')  
+    grXZ.Draw('AP')    
   h['actionEvt '+str(i)].cd(2)
   #h['mc_ax_zy'+str(i)].Draw('colz')
   if len(p[i]['yzY']) > 0:
    grYZ = ROOT.TGraphErrors(len(p[i]['yzY']), p[i]['yzZ'], p[i]['yzY'], pe[i]['yzZ'], pe[i]['yzY'])
    grYZ.SetMarkerColor(4)
-   grYZ.SetMarkerSize(0.9)
-   grYZ.SetMarkerStyle(20)
-   grYZ.SetTitle('Hits in y-z plane')
+   grYZ.SetMarkerStyle(7)
+   grYZ.SetTitle('Hits in x-z plane')
    grYZ.GetXaxis().SetRangeUser(250,600)
-   grYZ.GetYaxis().SetRangeUser(0,80)
+   grYZ.GetYaxis().SetRangeUser(0,80)    
    grYZ.GetXaxis().SetTitle('z [cm]')
-   grYZ.GetYaxis().SetTitle('y [cm]')
-   grYZ.Draw('AP') 
+   grYZ.GetYaxis().SetTitle('Y [cm]')
+   grYZ.Draw('AP')   
   h['actionEvt '+str(i)].cd(3)
   h['mcmu_ax_zx'+str(i)].SetMarkerStyle(7)
   h['mcmu_ax_zx'+str(i)].Draw('P')
