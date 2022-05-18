@@ -107,8 +107,8 @@ ut.bookHist(h,'genEmuons_actionEvt','Action-on event: Energy of MC muons at scor
 ut.bookHist(h,'Taction','MC: Time difference btw primary muon start T and products startT; T_diff [ns]',2005,-5,2000)
 ut.bookHist(h,'Taction_pid','MC: Time difference btw primary muon start T and products startT vs product PdgCode; daughter pid; T_diff [ns]',6000,-3000,3000,2005,-5,2000)
 ut.bookHist(h,'Taction_procid','MC: Time difference btw primary muon start T and products startT vs TMCProcess id; procID; T_diff [ns]',50,-2,48, 2005,-5,2000)
-ut.bookHist(h,'Taction_mufi','MC: Time difference btw MuFilter points; T_diff [ns]',2005,-5,2000)
-ut.bookHist(h,'Taction_scifi','MC: Time difference btw SciFi points; T_diff [ns]',2005,-5,2000)
+ut.bookHist(h,'Taction_mufi','MC: Time difference btw primary muon start T and its MuFilter points; T_diff [ns]',2005,-5,2000)
+ut.bookHist(h,'Taction_scifi','MC: Time difference btw primary muon start T and its SciFi points; T_diff [ns]',2005,-5,2000)
 ut.bookHist(h,'allActionProcIds','TMCProcess id; TMCProcess id', 50, -2, 48)
 
 
@@ -253,6 +253,13 @@ for i_event, event in enumerate(tchain) :
      ut.bookHist(h,'mcnonmu_ax_zx'+str(i_event),'non-#mu particles in detector region: MCTrack start points z-x view '+str(i_event)+'; z [cm]; x [cm]',100,250,600,100,-90,10)
      ut.bookHist(h,'mcnonmu_ax_zy'+str(i_event),'non-#mu particles in detector region: MCTrack start points z-y view '+str(i_event)+'; z [cm]; y [cm]',100,250,600,100,0,80)
 
+   # Loop over MCTracks
+   for mctrack in event.MCTrack :      
+    #primary muon
+    if mctrack.GetMotherId()==-1:
+       t_muon = mctrack.GetStartT()
+    else : continue
+
    MCpoints[i_event]=[]
    Nve = 0
    Nus = 0
@@ -279,16 +286,10 @@ for i_event, event in enumerate(tchain) :
        if abs(mcpoint.PdgCode())==13 and mcpoint.GetTrackID()==0 :
         h['mcmu_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
         h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-        if i_event ==2004: print("before" ,mcpoint.GetTime())
-        if mcpoint.GetTime() < prev : 
-           t_mufi=mcpoint.GetTime()
-           prev = t_mufi
-           if i_event==2004: print('Start', t_mufi)
+        h['Taction_mufi'].Fill(mcpoint.GetTime()-t_muon)             
        h['mc_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
-       h['mc_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-       h['Taction_mufi'].Fill(t_mufi-mcpoint.GetTime())
-       if i_event==2004: print(mcpoint.GetTime())         
-
+       h['mc_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())    
+    
    Nsf = len(event.ScifiPoint)
    prev = 9999999999.
    for mcpoint in event.ScifiPoint:
@@ -303,13 +304,9 @@ for i_event, event in enumerate(tchain) :
         if abs(mcpoint.PdgCode())==13 and mcpoint.GetTrackID()==0 :          
           h['mcmu_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
           h['mcmu_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-          if mcpoint.GetTime() < prev : 
-            t_scifi=mcpoint.GetTime()
-            prev = t_scifi
-            #print(i_event, "once")
+          h['Taction_scifi'].Fill(mcpoint.GetTime()-t_muon)
         h['mc_ax_zx'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetX())
-        h['mc_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())
-        h['Taction_scifi'].Fill(t_scifi-mcpoint.GetTime())
+        h['mc_ax_zy'+str(i_event)].Fill(mcpoint.GetZ(), mcpoint.GetY())        
                           
    MCpoints[i_event]=[Nve,Nsf,Nus,Ndsh,Ndsv, Nve+Nsf+Nus+Ndsh+Ndsv, Nsfv, Nsfh]
 
