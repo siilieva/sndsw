@@ -110,7 +110,7 @@ ut.bookHist(h,'Taction_procid','MC: Time difference btw primary muon start T and
 ut.bookHist(h,'Taction_mufi','MC: Time difference btw primary muon start T and its MuFilter points; T_diff [ns]',2005,-5,2000)
 ut.bookHist(h,'Taction_scifi','MC: Time difference btw primary muon start T and its SciFi points; T_diff [ns]',2005,-5,2000)
 ut.bookHist(h,'allActionProcIds','TMCProcess id; TMCProcess id', 50, -2, 48)
-
+ut.bookHist(h,'TallHitTo1st','Time btw 1st hit in event and rest of hits in event; T_hit -T_1Hit', 1000, 0, 1000)
 
 Tkey  = ROOT.std.vector('TString')()
 Ikey   = ROOT.std.vector('int')()
@@ -170,6 +170,7 @@ th1=0
 more=0
 
 for i_event, event in enumerate(tchain) :
+   if i_event > 1000: break
    ntrk=-1
    for aTrack in event.Reco_MuonTracks:
         ntrk+=1
@@ -404,12 +405,20 @@ p = {}
 pe = {}
 A,B = ROOT.TVector3(),ROOT.TVector3()
 trans2local = False
-for i, event in enumerate(tchain) :   
+for i, event in enumerate(tchain) : 
+   #print('event', i)
+   if i > 100000: break
+
+   for mctrack in event.MCTrack :      
+    #primary muon
+    if mctrack.GetMotherId()==-1:
+       t_muon = mctrack.GetStartT()
+    else : continue
+
    for  aTrack in event.Reco_MuonTracks:
       S = aTrack.getFitStatus()
       if not S.isFitConverged(): print(i)
-   if i not in eventList : continue
-   print (i)
+   #if i not in eventList : continue
    p[i] = {}
    pe[i] = {}
    p[i]['xzX'] = array('d')
@@ -420,7 +429,7 @@ for i, event in enumerate(tchain) :
    pe[i]['yzY'] = array('d')
    pe[i]['xzZ'] = array('d')
    pe[i]['yzZ'] = array('d')
-   digis = []
+   digis = []   
    if event.FindBranch("Digi_ScifiHits"): digis.append(event.Digi_ScifiHits)
    if event.FindBranch("Digi_MuFilterHits"): digis.append(event.Digi_MuFilterHits)
    if event.FindBranch("Digi_MuFilterHit"): digis.append(event.Digi_MuFilterHit)
@@ -429,12 +438,17 @@ for i, event in enumerate(tchain) :
      if x.GetEntries()>0: empty = False
    if empty: continue
    systems = {1:'Veto',2:'US',3:'DS',0:'Scifi'}
-   
+
+   t0 = 9e10
+   tHit=[]
    for D in digis:
-      for digi in D:
+      for digi in D:      
          detID = digi.GetDetectorID()
          sipmMult = 1
          if digi.GetName()  == 'MuFilterHit':
+            #print('mu', digi.GetTime())
+            #tHit.append(digi.GetImpactT())
+            #if digi.GetImpactT() < t0 : t0 = digi.GetImpactT()
             system = digi.GetSystem()
             geo.modules['MuFilter'].GetPosition(detID,A,B)
             sipmMult = len(digi.GetAllSignals())
@@ -444,6 +458,9 @@ for i, event in enumerate(tchain) :
                 tmp = curPath.rfind('/')
                 nav.cd(curPath[:tmp])
          else:
+            #print('sf ', digi.GetTime())
+            tHit.append(digi.GetTime()-t_muon)# in ns
+            if (digi.GetTime(0) - t_muon) < t0 : t0 = digi.GetTime(0) - t_muon
             geo.modules['Scifi'].GetSiPMPosition(detID,A,B)
             if trans2local:
                 curPath = nav.GetPath()
@@ -464,6 +481,12 @@ for i, event in enumerate(tchain) :
                    p[i]['yzY'].append(locA[1])
                    pe[i]['yzY'].append(0)#detSize[system][1])
                    pe[i]['yzZ'].append(0)#detSize[system][2])
+   
+   #print(len(tHit))
+   #print(t_muon)
+   for T in tHit :
+     #print('hit times', t0, T)
+     h['TallHitTo1st'].Fill(T-t0)
 
 for i in slopeArray :
   if i in MCslopeArray :
@@ -500,8 +523,11 @@ h['Taction_procid'].Write()
 h['Taction_mufi'].Write()
 h['Taction_scifi'].Write()
 h['allActionProcIds'].Write()
+h['TallHitTo1st'].Write()
+#print(h['TallHitTo1st'].GetBinContent(h['TallHitTo1st'].GetNbinx()))
 
-for i in eventList:#range(500):
+if False:
+ for i in eventList:#range(500):
   #if i not in eventList: continue
   ut.bookCanvas(h,'actionEvt '+str(i),' ',1024,768,2,4)
   h['actionEvt '+str(i)].cd(1)
