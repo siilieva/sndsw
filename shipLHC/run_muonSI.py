@@ -39,13 +39,38 @@ if options.withOutput:
 else:
   outFile = ROOT.TMemFile(outFileName,'CREATE')
 
+run = ROOT.FairRunAna()
+print("Initialized FairRunAna")
+
+source = ROOT.FairFileSource(F)
+run.SetSource(source)
+
+sink = ROOT.FairRootFileSink(outFile)
+run.SetSink(sink)
+
+# Hough transform
+HoughTask = SndlhcMuonReco.MuonReco()    
+run.AddTask(HoughTask)
+#run.Init()
+
+# simple tracking
+import SndlhcTracking
+trackTask = SndlhcTracking.Tracking() 
+trackTask.SetName('simpleTracking')
+run.AddTask(trackTask)
+run.Init()
+#print('before trackTask.Init()')
+#trackTask.Init()
+
 # Run check of Nhits in each event
 # Get input file
 tchain = ROOT.TChain("cbmsim")
 tchain.Add(options.inputFile)
-
+print("Number of events", tchain.GetEntries())
 Hits = {}
 for i_event, event in enumerate(tchain) :
+  if i_event >11000 : break
+  if i_event%1000 ==0 :print(i_event)
   Hits[i_event]=[]
   Nve = 0
   Nus = 0
@@ -68,35 +93,23 @@ for i_event, event in enumerate(tchain) :
      else: Nsfh+=1
   Hits[i_event]=[Nve,Nsf,Nus,Nds, Nve+Nsf+Nus+Ndsh+Ndsv, Nsfv, Nsfh, Ndsh,Ndsv]
 
-  if 1: #Hits[i_event][2] < 20 and Hits[i_event][1] < 20 and (Hits[i_event][3] < 10  or Hits[i_event][3] >= 10 ):
-    import SndlhcTracking
-    trackTask = SndlhcTracking.Tracking() 
-    trackTask.SetName('simpleTracking')
-    #run.AddTask(trackTask)
-    trackTask.Init()
-    trackTask.ExecuteTask()
+  if 1: #Hits[i_event][2] < 20 and Hits[i_event][1] < 20 and (Hits[i_event][3] < 10  or Hits[i_event][3] >= 10 ):    
+    print('now simple tracking')
+    trackTask.ExecuteTask('Scifi')
+    trackTask.FinishEvent() # fill
   else:
-    trackTask = SndlhcMuonReco.MuonReco()
-    run = ROOT.FairRunAna()
-    print("Initialized FairRunAna")
-
-    source = ROOT.FairFileSource(F)
-    run.SetSource(source)
-
-    sink = ROOT.FairRootFileSink(outFile)
-    run.SetSink(sink)
-    run.AddTask(trackTask)
-    run.Init()
-
     # The following lines must be *after* run.Init()
-    trackTask.SetTolerance(options.tolerance)
-    trackTask.SetHitsToFit("vesfusds")
+    print('now Hough')
+    HoughTask.SetTolerance(options.tolerance)
+    HoughTask.SetHitsToFit("vesfusds")
     if Hits[i_event][3] >= 10 and Hits[i_event][2] >=20 :
-      trackTask.SetHitsForTriplet("sf")
+      HoughTask.SetHitsForTriplet("sf")
     elif Hits[i_event][3] >= 10 and Hits[i_event][1] >= 20 :
-      trackTask.SetHitsForTriplet("us")
-    else :  trackTask.SetHitsForTriplet("ds")
-    trackTask.UseXmeas(options.withXmeas)
-    run.Run(i_event)
+      HoughTask.SetHitsForTriplet("us")
+    else :  HoughTask.SetHitsForTriplet("ds")
+    HoughTask.UseXmeas(options.withXmeas)
+    HoughTask.Exec(options)    
+trackTask.FinishTask()
+HoughTask.FinishTask()
 print("Done running")
 

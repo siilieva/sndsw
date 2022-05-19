@@ -49,10 +49,35 @@ class Tracking(ROOT.FairTask):
 
    self.systemAndPlanes  = {1:2,2:5,3:7}
    self.MuFilterHits = self.event.Digi_MuFilterHits
+   # Pass input data through to output.
+   #self.Passthrough()
+
    return 0
 
+ def Passthrough(self) :
+        T = self.ioman.GetInTree()
+        print('better come here')
+        # this did not work for me FIXME
+        #for x in T.GetListOfBranches():
+        #     obj_name = x.GetName()
+        #     if self.ioman.GetObject(obj_name) == None :
+        #         continue
+        #     self.ioman.Register(obj_name, self.ioman.GetFolderName(), self.ioman.GetObject(obj_name), ROOT.kTRUE)
+        self.ioman.Register('MCTrack', "", self.ioman.GetInTree().MCTrack, ROOT.kTRUE)
+        self.ioman.Register('vetoPoint', "", self.ioman.GetInTree().vetoPoint, ROOT.kTRUE)
+        self.ioman.Register('ScifiPoint', "", self.ioman.GetInTree().ScifiPoint, ROOT.kTRUE)
+        self.ioman.Register('MuFilterPoint', "", self.ioman.GetInTree().MuFilterPoint, ROOT.kTRUE)
+        self.ioman.Register('Digi_ScifiHits', "", self.ioman.GetInTree().Digi_ScifiHits, ROOT.kTRUE)
+        self.ioman.Register('Digi_ScifiHits2MCPoints', "", self.ioman.GetInTree().Digi_ScifiHits2MCPoints, ROOT.kTRUE)
+        self.ioman.Register('Cluster_Scifi', "", self.ioman.GetInTree().Cluster_Scifi, ROOT.kTRUE)
+        self.ioman.Register('Digi_MuFilterHits', "", self.ioman.GetInTree().Digi_MuFilterHits, ROOT.kTRUE)
+        self.ioman.Register('Digi_MuFilterHits2MCPoints', "", self.ioman.GetInTree().Digi_MuFilterHits2MCPoints, ROOT.kTRUE)
+
  def FinishEvent(self):
-  pass
+  self.sink.Fill()
+
+ def FinishTask(self):
+    self.ioman.Write()
 
  def ExecuteTask(self,option=''):
     self.kalman_tracks.Clear()
