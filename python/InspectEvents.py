@@ -101,25 +101,19 @@ for i_event, event in enumerate(tchain) :
      h['Nus'].Fill(Hits[i_event][2])
 
      # SELECT INTERESTING EVENT TO INSPECT - BASED ON NHITS FOR NOW
-     if Hits[i_event][1] > 40 : 
-         eventList[i_event] = []
-         eventList[i_event] = Hits[i_event]
-     if (Hits[i_event][3]+Hits[i_event][4]) > 10 and not i_event in eventList :
-         eventList[i_event] = [] 
-         eventList[i_event] = Hits[i_event]
-     if Hits[i_event][2] > 15 and not i_event in eventList : 
-         eventList[i_event] = [] 
-         eventList[i_event] = Hits[i_event]
-     if Hits[i_event][0] > 10 and not i_event in eventList :
-         eventList[i_event] = [] 
-         eventList[i_event] = Hits[i_event]
+     if (Hits[i_event][1] < 4  and Hits[i_event][1] !=0) : 
+         if (Hits[i_event][3]+Hits[i_event][4]) < 3 and (Hits[i_event][3]+Hits[i_event][4])!=0 :
+             if Hits[i_event][2] < 2 and Hits[i_event][2]!=0 : 
+                 if Hits[i_event][5] < 4 and Hits[i_event][5] !=0 :
+                     eventList[i_event] = [] 
+                     eventList[i_event] = Hits[i_event]
 
      if i_event in eventList:
          ut.bookHist(h,'mc_ax_zx'+str(i_event),'MC points z-x view '+str(i_event)+'; z [cm]; x [cm]',100,250,600,100,-90,10)
          ut.bookHist(h,'mc_ax_zy'+str(i_event),'MC points z-y view '+str(i_event)+'; z [cm]; y [cm]',100,250,600,100,0,80)
          
      t_muon = 0. # reference T0
-     if oprions.MC:
+     if options.MC:
          # Loop over MCTracks
          for mctrack in event.MCTrack :      
              #primary muon
@@ -127,10 +121,8 @@ for i_event, event in enumerate(tchain) :
                  h['genEmuons'].Fill(mctrack.GetEnergy())
                  t_muon = mctrack.GetStartT()
                  h['Emuons'].Fill(mctrack.GetEnergy())
-             if i_event not in MCslopeArray : MCslopeArray[i_event] = []
-             MCslopeArray[i_event]= [1000*math.atan(mctrack.GetPx()/mctrack.GetPz()), 1000*math.atan(mctrack.GetPy()/mctrack.GetPz())]        
-             if not i_event in Emuon: Emuon[i_event] = 0
-             Emuon[i_event]=mctrack.GetEnergy()        
+                 if not i_event in Emuon: Emuon[i_event] = 0
+                 Emuon[i_event]=mctrack.GetEnergy()                 
    
      trks[i_event]=[]
      trks[i_event]=[len(event.Reco_MuonTracks)]
@@ -159,6 +151,8 @@ for i_event, event in enumerate(tchain) :
      systems = {1:'Veto',2:'US',3:'DS',0:'Scifi'}
      print(i_event)
      
+     A,B = ROOT.TVector3(),ROOT.TVector3()
+     trans2local = False
      t0 = 9e10
      tHit=[]
      for D in digis:
@@ -237,18 +231,19 @@ for i in eventList:
    grYZ = ROOT.TGraphErrors(len(p[i]['yzY']), p[i]['yzZ'], p[i]['yzY'], pe[i]['yzZ'], pe[i]['yzY'])
    grYZ.SetMarkerColor(4)
    grYZ.SetMarkerStyle(7)
-   grYZ.SetTitle('Hits in x-z plane')
+   grYZ.SetTitle('Hits in y-z plane')
    grYZ.GetXaxis().SetRangeUser(250,600)
    grYZ.GetYaxis().SetRangeUser(0,80)    
    grYZ.GetXaxis().SetTitle('z [cm]')
-   grYZ.GetYaxis().SetTitle('Y [cm]')
+   grYZ.GetYaxis().SetTitle('y [cm]')
    grYZ.Draw('AP')   
   h['actionEvt '+str(i)].cd(3)  
   txt=ROOT.TLatex()
   txt.DrawLatexNDC(0.4,0.95,"Event %d"%i)
   txt.DrawLatexNDC(0.05,0.85,"E_{primary #mu } = %5.2f [GeV/c]"%Emuon[i])
-  txt.DrawLatexNDC(0.05,0.65,"Digi_hits in event: #color[2]{Veto %d } #color[4]{SciFi %d } #color[8]{US %d } #color[7]{DS %d }"%(Hits[i][0], Hits[i][1], Hits[i][2], Hits[i][3]+Hits[i][4]))
+  txt.DrawLatexNDC(0.05,0.45,"Digi_hits in event YZ: #color[2]{Veto %d } #color[4]{SciFi %d } #color[8]{US %d } #color[7]{DS %d }"%(Hits[i][0], Hits[i][7], Hits[i][2],Hits[i][3]))
+  txt.DrawLatexNDC(0.05,0.65,"Digi_hits in event XZ: #color[4]{SciFi %d } #color[7]{DS %d }"%(Hits[i][6], Hits[i][4]))
   txt.Draw()
   h['actionEvt '+str(i)].Write() 
-
+# Hits[i_event]=[Nve,Nsf,Nus,Ndsh,Ndsv, Nve+Nsf+Nus+Ndsh+Ndsv, Nsfv, Nsfh]   
 print('Done running')
