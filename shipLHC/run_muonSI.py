@@ -50,7 +50,7 @@ run.SetSink(sink)
 
 # Hough transform
 HoughTask = SndlhcMuonReco.MuonReco()    
-run.AddTask(HoughTask)
+#run.AddTask(HoughTask)
 #run.Init()
 
 # simple tracking
@@ -69,8 +69,8 @@ tchain.Add(options.inputFile)
 print("Number of events", tchain.GetEntries())
 Hits = {}
 for i_event, event in enumerate(tchain) :
-  if i_event >11000 : break
-  if i_event%1000 ==0 :print(i_event)
+  #if i_event >11000 : break
+  #if i_event%1000 ==0 :print(i_event)
   Hits[i_event]=[]
   Nve = 0
   Nus = 0
@@ -80,22 +80,25 @@ for i_event, event in enumerate(tchain) :
   Ndsh = 0
   Ndsv = 0
   Nds = 0
-  for aHit in event.Digi_MuFilterHits:
+  if False:
+   for aHit in event.Digi_MuFilterHits:
      if aHit.GetSystem() == 1: Nve+=1
      if aHit.GetSystem() == 2: Nus+=1
      if aHit.GetSystem() == 3: 
        if aHit.isVertical() : Ndsv+=1
        else : Ndsh+=1
        Nds = Ndsv + Ndsh
-  Nsf = len(event.Digi_ScifiHits)
-  for aHit in event.Digi_ScifiHits:
+   Nsf = len(event.Digi_ScifiHits)
+   for aHit in event.Digi_ScifiHits:
      if aHit.isVertical() : Nsfv+=1
      else: Nsfh+=1
-  Hits[i_event]=[Nve,Nsf,Nus,Nds, Nve+Nsf+Nus+Ndsh+Ndsv, Nsfv, Nsfh, Ndsh,Ndsv]
+   Hits[i_event]=[Nve,Nsf,Nus,Nds, Nve+Nsf+Nus+Ndsh+Ndsv, Nsfv, Nsfh, Ndsh,Ndsv]
 
-  if 1: #Hits[i_event][2] < 20 and Hits[i_event][1] < 20 and (Hits[i_event][3] < 10  or Hits[i_event][3] >= 10 ):    
-    print('now simple tracking')
-    trackTask.ExecuteTask('Scifi')
+  if 1: #Hits[i_event][2] < 20 and Hits[i_event][1] < 20 and (Hits[i_event][3] < 10  or Hits[i_event][3] >= 10 ):
+    #pass
+    #print('now simple tracking')
+    source.ReadEvent(i_event)
+    trackTask.ExecuteTask()
     trackTask.FinishEvent() # fill
   else:
     # The following lines must be *after* run.Init()
@@ -108,8 +111,9 @@ for i_event, event in enumerate(tchain) :
       HoughTask.SetHitsForTriplet("us")
     else :  HoughTask.SetHitsForTriplet("ds")
     HoughTask.UseXmeas(options.withXmeas)
-    HoughTask.Exec(options)    
+    HoughTask.Exec(options)  
+#run.Run(options.firstEvent, options.firstEvent + options.nEvents)  
 trackTask.FinishTask()
-HoughTask.FinishTask()
+#HoughTask.FinishTask()
 print("Done running")
 

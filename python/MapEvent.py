@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("-f", "--inputFile", dest="inputFile", help="single input file", required=False, default="sndLHC.Ntuple-TGeant4_dig.root")
 parser.add_argument("-g", "--geoFile", dest="geoFile", help="geofile", required=True)
-#parser.add_argument("-d", "--inputDigiFile", dest="inputDigiFile", help="single  digi input file", required=False, default="sndLHC.Ntuple-TGeant4_dig.root")
+parser.add_argument("-d", "--inputDigiFile", dest="inputDigiFile", help="single  digi input file", required=False, default="sndLHC.Ntuple-TGeant4_dig.root")
 #parser.add_argument("-n", "--nEvents", dest="nEvents", help="number of events to process", default=100000)
 #parser.add_argument("-s", "--start", dest="start", type=int,help="file name with $*$", required=False,default=False)
 
@@ -137,9 +137,9 @@ def map2Dict(aHit,T='GetAllSignals',mask=True):
 tchain = ROOT.TChain("cbmsim")
 tchain.Add(options.inputFile)
 
-#tree_digi = ROOT.TChain("cbmsim")
-#tree_digi.Add(options.inputDigiFile)
-#tchain.AddFriend(tree_digi)
+tree_digi = ROOT.TChain("cbmsim")
+tree_digi.Add(options.inputDigiFile)
+tchain.AddFriend(tree_digi)
 
 MCpoints={}
 Hits={}
@@ -170,8 +170,9 @@ th1=0
 more=0
 
 for i_event, event in enumerate(tchain) :
-   if i_event > 1000: break
+   #if i_event > 10000: break
    ntrk=-1
+   if len(event.Reco_MuonTracks)>0 : print(len(event.Reco_MuonTracks))
    for aTrack in event.Reco_MuonTracks:
         ntrk+=1
         stateTrack = aTrack.getFittedState()
@@ -407,7 +408,7 @@ A,B = ROOT.TVector3(),ROOT.TVector3()
 trans2local = False
 for i, event in enumerate(tchain) : 
    #print('event', i)
-   if i > 100000: break
+   #if i > 100000: break
 
    for mctrack in event.MCTrack :      
     #primary muon
@@ -526,8 +527,7 @@ h['allActionProcIds'].Write()
 h['TallHitTo1st'].Write()
 #print(h['TallHitTo1st'].GetBinContent(h['TallHitTo1st'].GetNbinx()))
 
-if False:
- for i in eventList:#range(500):
+for i in eventList:#range(500):
   #if i not in eventList: continue
   ut.bookCanvas(h,'actionEvt '+str(i),' ',1024,768,2,4)
   h['actionEvt '+str(i)].cd(1)
