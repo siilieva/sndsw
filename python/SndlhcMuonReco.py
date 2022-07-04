@@ -167,7 +167,7 @@ class MuonReco(ROOT.FairTask) :
         # MuFilter weight. Muon filter hits are thrown more times than scifi
         self.muon_weight = 100
         # Minimum number of planes hit in each of the downstream muon filter (if muon filter hits used) or scifi (if muon filter hits not used) views to try to reconstruct a muon
-        self.min_planes_hit = 3
+        self.min_planes_hit = 2
 
         # Maximum number of muons to find. To avoid spending too much time on events with lots of downstream activity.
         self.max_reco_muons = 5
@@ -194,8 +194,8 @@ class MuonReco(ROOT.FairTask) :
         self.hits_for_triplet = "ds"
 
         # Initialize Hough transforms for both views:
-        self.h_ZX = hough(n_accumulator_rho, [-80, 0], n_accumulator_angle, [-max_angle+np.pi/2., max_angle+np.pi/2.])
-        self.h_ZY = hough(n_accumulator_rho, [0, 80], n_accumulator_angle, [-max_angle+np.pi/2., max_angle+np.pi/2.])
+        self.h_ZX = hough(n_accumulator_rho, [-570, 570], n_accumulator_angle, [-np.pi, np.pi])
+        self.h_ZY = hough(n_accumulator_rho, [-570, 570], n_accumulator_angle, [-np.pi, np.pi])
 
         # To keep temporary detector information
         self.a = ROOT.TVector3()
