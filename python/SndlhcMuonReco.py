@@ -160,14 +160,14 @@ class MuonReco(ROOT.FairTask) :
         # Maximum absolute value of reconstructed angle (+/- 1 rad is the maximum angle to form a triplet in the SciFi)
         max_angle = 1.
         # Number of bins per Hough accumulator axis
-        n_accumulator_rho = 1000
-        n_accumulator_angle = 2500
+        n_accumulator_rho = 2000
+        n_accumulator_angle = 5000
         # Number of random throws per hit
         self.n_random = 5
         # MuFilter weight. Muon filter hits are thrown more times than scifi
-        self.muon_weight = 100
+        self.muon_weight = 1
         # Minimum number of planes hit in each of the downstream muon filter (if muon filter hits used) or scifi (if muon filter hits not used) views to try to reconstruct a muon
-        self.min_planes_hit = 2
+        self.min_planes_hit = 3
 
         # Maximum number of muons to find. To avoid spending too much time on events with lots of downstream activity.
         self.max_reco_muons = 5
