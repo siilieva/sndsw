@@ -6,14 +6,14 @@ from array import array
 
 def hit_finder(slope, intercept, box_centers, box_ds, tol = 0.) :
     """ Finds hits intersected by Hough line """
-    
+
     # First check if track at center of box is within box limits
     d = np.abs(box_centers[0,:,1] - (box_centers[0,:,0]*slope + intercept))
     center_in_box = d < (box_ds[0,:,1]+tol)/2.
 
     # Now check if, assuming line is not in box at box center, the slope is large enough for line to clip the box at corner
     clips_corner = np.abs(slope) > np.abs((d - (box_ds[0,:,1]+tol)/2.)/(box_ds[0,:,0]+tol)/2.)
-    
+
     # If either of these is true, line goes through hit:
     hit_mask = np.logical_or(center_in_box, clips_corner)
 
@@ -23,7 +23,12 @@ def hit_finder(slope, intercept, box_centers, box_ds, tol = 0.) :
 class hough() :
     """ Hough transform implementation """
 
-    def __init__(self, n_r, r_range, n_theta, theta_range, squaretheta = False, smooth = True) :
+    def __init__(self, n_r, r_range, n_theta, theta_range, max_iter, lim_angles, max_diag, squaretheta = False, smooth = True) :
+
+        # most of these should be global variables and not init every time.
+        self.max_iter = max_iter
+        self.lim_angles = lim_angles
+        self.max_diag = max_diag
 
         self.n_r = n_r
         self.n_theta = n_theta
@@ -33,16 +38,26 @@ class hough() :
 
         self.smooth = smooth
 
+        # Exclude theta range for tracks(lines) passing less than 3 detector planes
+        # A similar thing can be done for r, leave it for now
         self.r_bins = np.linspace(self.r_range[0], self.r_range[1], n_r)
         if not squaretheta :
-            self.theta_bins = np.linspace(self.theta_range[0], self.theta_range[1], n_theta)
+            if  not self.theta_range[0] <= self.lim_angles[0] <= self.theta_range[1] and not self.theta_range[0] <= self.lim_angles[1] <= self.theta_range[1]:
+                self.theta_bins = np.linspace(self.theta_range[0], self.theta_range[1], n_theta)
+            if self.theta_range[0] <= self.lim_angles[0] <= self.theta_range[1] and not self.theta_range[0] <= self.lim_angles[1] <= self.theta_range[1]:
+                self.theta_bins = np.linspace(self.theta_range[0], self.lim_angles[0], n_theta)
+            if not self.theta_range[0] <= self.lim_angles[0] <= self.theta_range[1] and self.theta_range[0] <= self.lim_angles[1] <= self.theta_range[1]:
+                self.theta_bins = np.linspace(self.lim_angles[1], self.theta_range[1], n_theta)
+            if self.theta_range[0] <= self.lim_angles[0] <= self.theta_range[1] and self.theta_range[0] <= self.lim_angles[1] <= self.theta_range[1]:
+                self.theta_bins = np.concatenate(np.linspace((self.theta_range[0],self.lim_angles[1]), (self.lim_angles[0], self.theta_range[1]), np.floor(n_theta/2).astype(np.int), axis=1))
         else :
+            # SI: whoever wants to use this user case, gets to code the above ifs here
             self.theta_bins = np.linspace(np.sign(self.theta_range[0])*(self.theta_range[0]**0.5), np.sign(self.theta_range[1])*(self.theta_range[1]**0.5), n_theta)
             self.theta_bins = np.sign(self.theta_bins)*np.square(self.theta_bins)
-        
+
         self.cos_thetas = np.cos(self.theta_bins)
         self.sin_thetas = np.sin(self.theta_bins)
-        
+
         self.theta_i = np.array(list(range(n_theta)))
 
     def fit(self, hit_collection, draw = False, weights = None) :
@@ -70,18 +85,18 @@ class hough() :
 #            plt.xlabel(r"$\theta$ [rad]")
 #            plt.ylabel("r [cm]")
 #            plt.tight_layout()
-        
+
         i_max = np.unravel_index(self.accumulator.argmax(), self.accumulator.shape)
 
         found_r = self.r_bins[i_max[0]]
         found_theta = self.theta_bins[i_max[1]]
+        binSize_r = self.r_bins[1] - self.r_bins[0]
+        binSize_theta = self.theta_bins[1] - self.theta_bins[0]
 
-        slope = -1./np.tan(found_theta)
-        intercept = found_r/np.sin(found_theta)
-    
-        return (slope, intercept)
+        return (found_r, found_theta, binSize_r, binSize_theta)
 
     def fit_randomize(self, hit_collection, hit_d, n_random, draw = False, weights = None) :
+
         success = True
         if not len(hit_collection) :
             return (-1, -1, [[],[]], [], False)
@@ -99,11 +114,32 @@ class hough() :
             if weights is not None :
                 weights = np.tile(weights, n_random)
 
-            fit = self.fit(random_hit_collection, draw, weights)
-        else :
-            fit = self.fit(hit_collection, draw, weights)
+        # Iterate Hough transform max_iter times
+        # or until precision in rho(r) is order of microns:
+        # that doesn't make sense for DS where precisoon is 1cm, leave for now.
+        found_r_prev = -999.
+        for it in range(0, self.max_iter):
+            if (n_random > 0 ): fit = self.fit(random_hit_collection, draw, weights)
+            else: fit = self.fit(hit_collection, draw, weights)
+            if abs(fit[0] - found_r_prev) < 1e-4: break
+            found_r_prev = fit[0]
 
-        return fit
+            if fit[0]+fit[2] > self.max_diag: up_r = self.max_diag
+            else: up_r = fit[0]+fit[2]
+            if fit[0]-fit[2] < -self.max_diag: low_r = -self.max_diag
+            else: low_r = fit[0]-fit[2]
+
+            if fit[1]+fit[3] > np.pi/2.: up_theta = np.pi/2.
+            else: up_theta = fit[1]+fit[3]
+            if fit[1]-fit[3] < -np.pi/2.: low_theta = -np.pi/2.
+            else: low_theta = fit[1]-fit[3]
+
+            self = hough(self.n_r, [low_r, up_r], self.n_theta, [low_theta, up_theta], self.max_iter, self.lim_angles, self.max_diag)
+
+        slope = -1./np.tan(fit[1])
+        intercept = fit[0]/np.sin(fit[1])
+
+        return (slope, intercept)
 
 def numPlanesHit(systems, detector_ids) :
     scifi_stations = []
@@ -115,13 +151,16 @@ def numPlanesHit(systems, detector_ids) :
     mufi_us_planes.append( (detector_ids[systems == 2]%10000)//1000 )
 
     return len(np.unique(scifi_stations)) + len(np.unique(mufi_ds_planes)) + len(np.unique(mufi_us_planes))
-    
+
 class MuonReco(ROOT.FairTask) :
     " Muon reconstruction "
 
     def Init(self) :
 
         print("Initializing muon reconstruction task!")
+
+        self.current_event = 0
+
         self.lsOfGlobals  = ROOT.gROOT.GetListOfGlobals()
         self.scifiDet = self.lsOfGlobals.FindObject('Scifi')
         self.mufiDet = self.lsOfGlobals.FindObject('MuFilter')
@@ -149,7 +188,7 @@ class MuonReco(ROOT.FairTask) :
             if self.ScifiHits == None :
                warnings.warn("Digi_ScigiHits not in branch list")
                self.ScifiHits = self.ioman.GetInTree().Digi_ScifiHits
-        
+
         if self.MuFilterHits == None :
             raise RuntimeException("Digi_MuFilterHits not found in input file.")
         if self.ScifiHits == None :
@@ -158,13 +197,16 @@ class MuonReco(ROOT.FairTask) :
         # Initialize hough transform
         # Reco parameters (these should be registered in the rtdb?):
         # Maximum absolute value of reconstructed angle (+/- 1 rad is the maximum angle to form a triplet in the SciFi)
-        max_angle = 1.
+        max_angle = 1.1 # to accomodate DS as well
+        max_diag = 576. # diagonal of the image wrt to (0,0): detector @ z_start = 250 cm, L_det = 3 m, y_max(x_max) = 80(-80) cm
+        max_iter = 10
         # Number of bins per Hough accumulator axis
-        n_accumulator_rho = 2000
-        n_accumulator_angle = 5000
+        n_accumulator_rho = 1000
+        n_accumulator_angle = 1000
         # Number of random throws per hit
         self.n_random = 5
-        # MuFilter weight. Muon filter hits are thrown more times than scifi
+        # MuFilter weight. Muon filter hits are thrown more times than scifi 
+        # No need for weights since single running with single det system
         self.muon_weight = 1
         # Minimum number of planes hit in each of the downstream muon filter (if muon filter hits used) or scifi (if muon filter hits not used) views to try to reconstruct a muon
         self.min_planes_hit = 3
@@ -192,10 +234,10 @@ class MuonReco(ROOT.FairTask) :
         self.hits_to_fit = "sfusds"
         # Which hits to use for triplet condition. By default use only downstream muon system hits.
         self.hits_for_triplet = "ds"
-
+        
         # Initialize Hough transforms for both views:
-        self.h_ZX = hough(n_accumulator_rho, [-570, 570], n_accumulator_angle, [-np.pi, np.pi])
-        self.h_ZY = hough(n_accumulator_rho, [-570, 570], n_accumulator_angle, [-np.pi, np.pi])
+        self.h_ZX = hough(n_accumulator_rho, [-max_diag, max_diag], n_accumulator_angle, [-np.pi/2., np.pi/2.], max_iter, [-np.pi/2.+max_angle, np.pi/2.-max_angle], max_diag)
+        self.h_ZY = hough(n_accumulator_rho, [-max_diag, max_diag], n_accumulator_angle, [-np.pi/2., np.pi/2.], max_iter, [-np.pi/2.+max_angle, np.pi/2.-max_angle], max_diag)
 
         # To keep temporary detector information
         self.a = ROOT.TVector3()
@@ -219,13 +261,13 @@ class MuonReco(ROOT.FairTask) :
         fM.init(bfield)
         ROOT.genfit.MaterialEffects.getInstance().init(geoMat)
         ROOT.genfit.MaterialEffects.getInstance().setNoEffects()
-        
+
         self.kalman_fitter = ROOT.genfit.KalmanFitter()
         self.kalman_fitter.setMaxIterations(50)
         self.kalman_sigmaScifi_spatial = self.Scifi_dx / 12**0.5
         self.kalman_sigmaMufiUS_spatial = self.MuFilter_us_dy / 12**0.5
         self.kalman_sigmaMufiDS_spatial = self.MuFilter_ds_dy/ 12**0.5
-        
+
         # Init() MUST return int
         return 0
     
@@ -254,6 +296,8 @@ class MuonReco(ROOT.FairTask) :
 
     def Exec(self, opt) :
         self.kalman_tracks.Clear()
+        
+        self.current_event += 1
         
         hit_collection = {"pos" : [[], [], []], 
                           "d" : [[], [], []], 
@@ -309,6 +353,8 @@ class MuonReco(ROOT.FairTask) :
         if "sf" in self.hits_to_fit :
             # Loop through scifi hits
             for i_hit, scifiHit in enumerate(self.ScifiHits) :
+                # We can skip scifi hits below threshold signal
+                if not scifiHit.isValid(): continue
                 self.scifiDet.GetSiPMPosition(scifiHit.GetDetectorID(), self.a, self.b)
                 hit_collection["pos"][0].append(self.a.X())
                 hit_collection["pos"][1].append(self.a.Y())
@@ -400,7 +446,7 @@ class MuonReco(ROOT.FairTask) :
 
             ZY_hough = self.h_ZY.fit_randomize(ZY, d_ZY, self.n_random)
             ZX_hough = self.h_ZX.fit_randomize(ZX, d_ZX, self.n_random)
-
+            
             # Check if track intersects minimum number of hits in each plane.
             track_hits_for_triplet_ZY = hit_finder(ZY_hough[0], ZY_hough[1], 
                                                    np.dstack([hit_collection["pos"][2][triplet_hits_horizontal],
