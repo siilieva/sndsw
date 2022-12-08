@@ -1,5 +1,12 @@
 var NAVTREEINDEX45 =
 {
+"evd__nextEvent_8py.html":[13,0,7,5],
+"evd__nextEvent_8py.html#a69c0f2e5a10843d7364dcaa753ecac73":[13,0,7,5,0],
+"evd__nextEvent_8py_source.html":[13,0,7,5],
+"evd__transparentMode_8py.html":[13,0,7,6],
+"evd__transparentMode_8py.html#afeac3b4d7cb3334678bf667700bc0b20":[13,0,7,6,0],
+"evd__transparentMode_8py_source.html":[13,0,7,6],
+"evdsnd__commands_8py.html":[13,0,16,9],
 "evdsnd__commands_8py.html#a051209baf8734a240de90b76c5481b03":[13,0,16,9,1],
 "evdsnd__commands_8py.html#a06088a0ef7c2c5720ab98f6296c6283b":[13,0,16,9,0],
 "evdsnd__commands_8py.html#aba22e52f0f90c81d711a3c4ce8201de9":[13,0,16,9,3],
@@ -237,17 +244,10 @@ var NAVTREEINDEX45 =
 "functions_type.html":[12,3,3],
 "functions_u.html":[12,3,0,21],
 "functions_v.html":[12,3,0,22],
-"functions_vars.html":[12,3,2],
 "functions_vars.html":[12,3,2,0],
+"functions_vars.html":[12,3,2],
 "functions_vars_a.html":[12,3,2,1],
 "functions_vars_b.html":[12,3,2,2],
 "functions_vars_c.html":[12,3,2,3],
-"functions_vars_d.html":[12,3,2,4],
-"functions_vars_e.html":[12,3,2,5],
-"functions_vars_f.html":[12,3,2,6],
-"functions_vars_g.html":[12,3,2,7],
-"functions_vars_h.html":[12,3,2,8],
-"functions_vars_i.html":[12,3,2,9],
-"functions_vars_j.html":[12,3,2,10],
-"functions_vars_k.html":[12,3,2,11]
+"functions_vars_d.html":[12,3,2,4]
 };
