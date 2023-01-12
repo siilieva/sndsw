@@ -4,7 +4,9 @@ import ROOT,os,sys
 import boardMappingParser
 import csv
 import time
+import calendar
 from rootpyPickler import Unpickler
+import json
 
 # raw data from Ettore: https://cernbox.cern.ch/index.php/s/Ten7ilKuD3qdnM2 
 
@@ -83,7 +85,7 @@ class ConvRawDataPY(ROOT.FairTask):
       if not self.monitoring:
         if self.newFormat:
            if options.nEvents<0:  self.nEvents = self.fiN.data.GetEntries()
-           else: self.nEvents = min(options.nEvents,self.fiN.data.GetEntries())
+           else: self.nEvents = min(options.nEvents,self.fiN.data.GetEntries())           
         else:
            if options.nEvents<0:  self.nEvents = self.fiN.event.GetEntries()
            else: self.nEvents = min(options.nEvents,self.fiN.event.GetEntries())
@@ -269,7 +271,7 @@ class ConvRawDataPY(ROOT.FairTask):
        self.sTree = ROOT.TTree('rawConv','raw data converted')
        ROOT.gDirectory.pwd()
        self.header  = ROOT.SNDLHCEventHeader()
-       eventSND  = self.sTree.Branch("EventHeader",self.header,32000,-1)
+       eventSND  = self.sTree.Branch("EventHeader.",self.header,32000,1)
 
        self.digiSciFi   = ROOT.TClonesArray("sndScifiHit")
        self.digiSciFiBranch   = self.sTree.Branch("Digi_ScifiHits",self.digiSciFi,32000,1)
@@ -285,6 +287,8 @@ class ConvRawDataPY(ROOT.FairTask):
        self.fSink.WriteObject(B,"BranchList", ROOT.TObject.kSingleKey)
        self.fSink.SetRunId(options.runNumber)
        self.fSink.SetOutTree(self.sTree)
+       
+       if self.newFormat: self.run_startUTC = self.getStartTime()     
 
 #-------end of init for py ------------------------------------
 
@@ -368,6 +372,21 @@ class ConvRawDataPY(ROOT.FairTask):
                f.close()
          for l in self.Lcrun: print(l)
 
+   def getStartTime(self):
+      runNr = str( abs(self.options.runNumber) ).zfill(6)
+      path  = self.options.path+'run_'+ runNr+'/'
+      jname = "run_timestamps.json"
+      from XRootD import client
+      with client.File() as f:
+               f.open(self.options.server+path+jname)
+               status, jsonStr = f.read()
+               f.close()
+      date = json.loads(jsonStr)
+      time_str = date['start_time'].replace('Z','')
+      time_obj = time.strptime(time_str, '%Y-%m-%dT%H:%M:%S')
+      startTimeOfRun = calendar.timegm(time_obj)
+      return startTimeOfRun
+
   # reading hits and converting to event information
 
   # https://gitlab.cern.ch/snd-scifi/software/-/wikis/Raw-data-format 
@@ -403,6 +422,7 @@ class ConvRawDataPY(ROOT.FairTask):
      event = self.fiN.data
      event.GetEvent(eventNumber)
      self.header.SetEventTime(event.evt_timestamp)
+     self.header.SetUTCtimestamp(int(event.evt_timestamp*6.23768*1e-9 + self.run_startUTC))
      self.header.SetEventNumber(event.evt_number) #   for new event header
      self.header.SetFlags(event.evt_flags)
      self.header.SetRunId( self.options.runNumber )
