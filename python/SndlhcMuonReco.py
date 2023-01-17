@@ -206,10 +206,13 @@ class MuonReco(ROOT.FairTask) :
         if eventTree:
             self.MuFilterHits = eventTree.Digi_MuFilterHits
             self.ScifiHits       = eventTree.Digi_ScifiHits
+            self.EventHeader        = eventTree.EventHeader
         else:
         # Try the FairRoot way 
             self.MuFilterHits = self.ioman.GetObject("Digi_MuFilterHits")
             self.ScifiHits = self.ioman.GetObject("Digi_ScifiHits")
+            if self.isMC: self.EventHeader = self.ioman.GetObject("MCEventHeader")
+            else: self.EventHeader = self.ioman.GetObject("EventHeader")
 
         # If that doesn't work, try using standard ROOT
             if self.MuFilterHits == None :
@@ -220,11 +223,17 @@ class MuonReco(ROOT.FairTask) :
                if self.logger.IsLogNeeded(ROOT.fair.Severity.info):
                   print("Digi_ScifiHits not in branch list")
                self.ScifiHits = self.ioman.GetInTree().Digi_ScifiHits
+            if self.EventHeader == None :
+               if self.logger.IsLogNeeded(ROOT.fair.Severity.info):
+                  print("EventHeader not in branch list")
+               self.EventHeader = self.ioman.GetInTree().EventHeader
         
         if self.MuFilterHits == None :
             raise RuntimeException("Digi_MuFilterHits not found in input file.")
         if self.ScifiHits == None :
             raise RuntimeException("Digi_ScifiHits not found in input file.")
+        if self.EventHeader == None :
+            raise RuntimeException("EventHeader not found in input file.")
         
         # Initialize event counters in case scaling of events is required
         self.scale = 1
@@ -403,7 +412,7 @@ class MuonReco(ROOT.FairTask) :
         self.kalman_sigmaScifi_spatial = self.Scifi_dx / 12**0.5
         self.kalman_sigmaMufiUS_spatial = self.MuFilter_us_dy / 12**0.5
         self.kalman_sigmaMufiDS_spatial = self.MuFilter_ds_dy/ 12**0.5
-        
+
         # Init() MUST return int
         return 0
     
@@ -441,6 +450,19 @@ class MuonReco(ROOT.FairTask) :
         # Set scaling in case task is run seperately from other tracking tasks
         if self.scale>1 and self.standalone:
            if ROOT.gRandom.Rndm() > 1.0/self.scale: return
+
+        # Set random generator if MuFilter stations are used in Kalman Fitter
+        if ("us" in self.hits_to_fit) or ("ds" in self.hits_to_fit):
+           if self.isMC: # the event number serves as seed for MC. Avoid seed = 0 as it leads to a different seed every time.
+              if hasattr(self.EventHeader, "SetMCEntryNumber"): # for FairEventHeader
+                 seed = self.EventHeader.GetMCEntryNumber()+1000
+              else: seed = self.EventHeader.GetEventNumber()+1000
+           else: # the event time is the seed for data
+              seed = int(self.EventHeader.GetEventTime())
+             
+           gRandom_evently = ROOT.TRandom3(seed)
+           if self.logger.IsLogNeeded(ROOT.fair.Severity.debug):
+              print("Initializing random generator with seed", seed)
 
         self.events_run += 1
         hit_collection = {"pos" : [[], [], []], 
@@ -795,23 +817,39 @@ class MuonReco(ROOT.FairTask) :
             hit_time = np.concatenate([hit_collection["time"][hit_collection["vert"]][track_hits_ZX],
                                       hit_collection["time"][~hit_collection["vert"]][track_hits_ZY]])
 
+            hit_system = np.concatenate([hit_collection["system"][hit_collection["vert"]][track_hits_ZX],
+                                    hit_collection["system"][~hit_collection["vert"]][track_hits_ZY]])
+
             for i_z_sorted in hit_z.argsort() :
                 tp = ROOT.genfit.TrackPoint()
                 hitCov = ROOT.TMatrixDSym(7)
                 hitCov[6][6] = kalman_spatial_sigma[i_z_sorted]**2
-                
+
+                # Set drift distance from (genfit's) wire measurement
+                # For Scifi, 0 drift is reasonable, not the case for US and DS.
+                # For US and DS, use a randomly generated r_drift for each measurement
+                # i.e. take a random number btw 0 and kalman_max_dist, and smear with det resolution
+                if hit_system[i_z_sorted] == 0:
+                     r_drift = 0
+                elif hit_system[i_z_sorted] == 2:
+                     r_drift = gRandom_evently.Gaus(gRandom_evently.Uniform(0, kalman_max_dis[i_z_sorted]),
+                                                    self.kalman_sigmaMufiUS_spatial)
+                elif hit_system[i_z_sorted] == 3:
+                     r_drift = gRandom_evently.Gaus(gRandom_evently.Uniform(0, kalman_max_dis[i_z_sorted]),
+                                                    self.kalman_sigmaMufiDS_spatial)
+
                 measurement = ROOT.genfit.WireMeasurement(ROOT.TVectorD(7, array('d', [hit_A0[i_z_sorted],
                                                                                        hit_A1[i_z_sorted],
                                                                                        hit_z[i_z_sorted],
                                                                                        hit_B0[i_z_sorted],
                                                                                        hit_B1[i_z_sorted],
                                                                                        hit_B2[i_z_sorted],
-                                                                                       0.])),
+                                                                                       r_drift])),
                                                           hitCov,
                                                           1, # detid?
                                                           6, # hitid?
                                                           tp)
-                
+
                 measurement.setMaxDistance(kalman_max_dis[i_z_sorted])
                 measurement.setDetId(int(hit_detid[i_z_sorted]))
                 measurement.setHitId(int(hitID))
