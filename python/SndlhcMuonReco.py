@@ -196,8 +196,8 @@ class MuonReco(ROOT.FairTask) :
         # self.Passthrough()
         
         # MC or data - needed for hit timing unit
-        if self.ioman.GetInTree().GetName() == 'cbmsim': self.isMC = True
-        else: self.isMC = False
+        if self.ioman.GetInTree().GetName() == 'rawConv': self.isMC = False
+        else: self.isMC = True
 
         # Fetch digi hit collections from online if exist
         sink = self.ioman.GetSink()
