@@ -206,10 +206,16 @@ class MuonReco(ROOT.FairTask) :
         if eventTree:
             self.MuFilterHits = eventTree.Digi_MuFilterHits
             self.ScifiHits       = eventTree.Digi_ScifiHits
+            self.MCtrack = eventTree.MCTrack
+            self.MuFilterPoint= eventTree.MuFilterPoint
+            self.Digi_MuFilterHits2MCPoints = eventTree.Digi_MuFilterHits2MCPoints
         else:
         # Try the FairRoot way 
             self.MuFilterHits = self.ioman.GetObject("Digi_MuFilterHits")
             self.ScifiHits = self.ioman.GetObject("Digi_ScifiHits")
+            self.MCtrack = self.ioman.GetObject("MCTrack")
+            self.MuFilterPoint = self.ioman.GetObject("MuFilterPoint")
+            self.Digi_MuFilterHits2MCPoints = self.ioman.GetObject("Digi_MuFilterHits2MCPoints")
 
         # If that doesn't work, try using standard ROOT
             if self.MuFilterHits == None :
@@ -220,6 +226,20 @@ class MuonReco(ROOT.FairTask) :
                if self.logger.IsLogNeeded(ROOT.fair.Severity.info):
                   print("Digi_ScifiHits not in branch list")
                self.ScifiHits = self.ioman.GetInTree().Digi_ScifiHits
+            if self.MCtrack == None :
+               if self.logger.IsLogNeeded(ROOT.fair.Severity.info):
+                  print("MCTrack not in branch list")
+               self.MCtrack = self.ioman.GetInTree().MCTrack
+            if self.MuFilterPoint == None:
+               if self.logger.IsLogNeeded(ROOT.fair.Severity.info):
+                  print("MuFilterPoint not in branch list")
+               self.MuFilterPoint = self.ioman.GetInTree().MuFilterPoint
+            if self.Digi_MuFilterHits2MCPoints == None:
+               if self.logger.IsLogNeeded(ROOT.fair.Severity.info):
+                  print("Digi_MuFilterHits2MCPoints not in branch list")
+               self.Digi_MuFilterHits2MCPoints = self.ioman.GetInTree().Digi_MuFilterHits2MCPoints
+        
+        self.file =open("DS_tracking_slopes_comp.txt", "w")
         
         if self.MuFilterHits == None :
             raise RuntimeException("Digi_MuFilterHits not found in input file.")
@@ -470,6 +490,8 @@ class MuonReco(ROOT.FairTask) :
                     if self.logger.IsLogNeeded(ROOT.fair.Severity.warn):
                        print("WARNING! Unknown MuFilter system!!")
             
+                
+                if muFilterHit.GetDetectorID()>=32000:continue
                 self.mufiDet.GetPosition(muFilterHit.GetDetectorID(), self.a, self.b)
             
                 hit_collection["pos"][0].append(self.a.X())
@@ -845,6 +867,14 @@ class MuonReco(ROOT.FairTask) :
                   this_track.setTrackType(self.track_type)
                   # Save the track in sndRecoTrack format
                   self.kalman_tracks[i_muon] = this_track
+                  
+                  # get also MC true track info @ 1st DS track point
+                  hitDetId = this_track.getRawMeasDetIDs()[0]
+                  # get the MC points related to this measurement and get MC muon dir angle @ that det element
+                  for mc_point_i, _ in self.Digi_MuFilterHits2MCPoints[0].wList(hitDetId) :
+                     if abs(self.MuFilterPoint[mc_point_i].PdgCode()) == 13 and self.MuFilterPoint[mc_point_i].GetTrackID()==0: 
+                      print(self.events_run-1, self.MuFilterPoint[mc_point_i].GetPx()/self.MuFilterPoint[mc_point_i].GetPz(), self.MuFilterPoint[mc_point_i].GetPy()/self.MuFilterPoint[mc_point_i].GetPz(), ZX_hough[0], ZY_hough[0], this_track.getSlopeXZ(),this_track.getSlopeYZ(), this_track.getChi2(), this_track.getNdf(), file =self.file)
+                  
 
             # Remove track hits and try to find an additional track
             # Find array index to be removed
@@ -864,6 +894,7 @@ class MuonReco(ROOT.FairTask) :
 
     def FinishTask(self) :
         print("Processed" ,self.events_run)
+        self.file.close()
         if not self.genfitTrack : self.kalman_tracks.Delete()
         else : pass
 
