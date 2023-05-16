@@ -624,12 +624,14 @@ def drawDetectors():
       nodes['volTarget_1/volWallborder_{}'.format(i)]=ROOT.kGray
       nodes['volMuFilter_1/subUSBox_{}'.format(i+2)]=ROOT.kGray+1
       nodes['volMuFilter_1/volMuUpstreamDet_{}_{}'.format(i, i+2)]=ROOT.kBlue+1
+      # iron blocks btw SciFi planes in the testbeam 2023 det layout
+      nodes['volTarget_1/volFeTarget{}_1'.format(i+1)]=ROOT.kGreen-6
       for j in range(10):
          nodes['volMuFilter_1/volMuUpstreamDet_{}_{}/volMuUpstreamBar_2{}00{}'.format(i, i+2, i, j)]=ROOT.kBlue+1
       nodes['volMuFilter_1/volFeBlock_{}'.format(i)]=ROOT.kGreen-6
    for i in range(7,10):
       nodes['volMuFilter_1/volFeBlock_{}'.format(i)]=ROOT.kGreen-6
-   passNodes = {'Block', 'Wall'}
+   passNodes = {'Block', 'Wall', 'FeTarget'}
    xNodes = {'UpstreamBar', 'VetoBar', 'hor'}
    proj = {'X':0,'Y':1}
    for node_ in nodes:
@@ -642,6 +644,8 @@ def drawDetectors():
             X.Draw('f&&same')
             X.Draw('same')
          else:
+            # check if node exists
+            if not nav.CheckPath(node): continue
             nav.cd(node)
             N = nav.GetCurrentNode()
             S = N.GetVolume().GetShape()
