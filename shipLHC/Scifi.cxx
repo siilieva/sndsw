@@ -133,6 +133,9 @@ void Scifi::ConstructGeometry()
   TGeoMedium *Epoxy = gGeoManager->GetMedium("Epoxy");
 
   TGeoVolume *volTarget = gGeoManager->GetVolume("volTarget");
+  
+  InitMedium("iron");
+  TGeoMedium *Fe =gGeoManager->GetMedium("iron");
 
 // external parameters
 	Double_t fXDimension = conf_floats["Scifi/xdim"];
@@ -261,10 +264,11 @@ void Scifi::ConstructGeometry()
   Double_t zPosM;
   Double_t offsetS =  -fWidthScifiMat/2 + fOffsetRowS;
   Double_t offsetL =  -fWidthScifiMat/2 + fOffsetRowL;
-
+  
   // All fibres will be assigned station number 1 and mat number 1, to keep compatibility with the STMRFFF format.
   int dummy_station = 1;
   int dummy_mat = 1;
+  
   //Adding horizontal fibers
   for (int irow = 0; irow < fNFibers_z; irow++){
     zPosM =  -fZScifiMat/2 + fClad2_rmax/2 + irow*fVertPitch;
@@ -293,6 +297,19 @@ void Scifi::ConstructGeometry()
 	VertMatVolume->AddNode(FiberVolume, 1e6*dummy_station + 1e5*1 + 1e4*dummy_mat + 1e3*(irow + 1) + ifiber + 1, new TGeoCombiTrans("rottransvert1", offsetL + ifiber*fHorPitch, 0, zPosM, rotvertfiber));
       }
     }
+  }
+
+  // for testbeam 2023
+  // for now the distinct feature of the testbeam could be the 4 SciFi planes
+  std::map<int, TGeoVolume*> volFeTarget;
+  std::map<int, float> fFeTargetX;
+  std::map<int, float> fFeTargetY;
+  std::map<int, float> fFeTargetZ;
+  for ( int i = 0; i < fNScifi; i++){
+      std::string station = std::to_string(i+1);
+      fFeTargetX[i] = conf_floats[TString("Scifi/FeTargetX"+station)];
+      fFeTargetY[i] = conf_floats[TString("Scifi/FeTargetZ"+station)];
+      fFeTargetZ[i] = conf_floats[TString("Scifi/FeTargetY"+station)];
   }
 
   // DetID is of the form: 
@@ -328,13 +345,26 @@ void Scifi::ConstructGeometry()
     volTarget->AddNode(ScifiVolume, node, 
                new TGeoTranslation(DeltasV[istation][0], DeltasH[istation][1], DeltasH[istation][2]));
 
+    //std::cout<<"deltas "<<DeltasV[istation][0]<<" "<< DeltasH[istation][1]<<" "<< DeltasH[istation][2]<<" "<<totalThickness<<std::endl;
+    // for 2023 testbeam put iron blocks of variable length in between SciFi planes - the planes are upstream of the blocks!
+    if (fNScifi==4 && istation < fNScifi-1) {
+       volFeTarget[istation] = gGeoManager->MakeBox(TString("volFeTarget"+station),Fe,fFeTargetX[istation]/2., fFeTargetY[istation]/2., fFeTargetZ[istation]/2.);
+       volFeTarget[istation]->SetLineColor(kGreen-4);
+       volTarget->AddNode(volFeTarget[istation],1,
+                                         new TGeoTranslation(DeltasV[istation][0] ,
+                                                             DeltasH[istation][1] ,
+                                                             DeltasH[istation][2] + totalThickness + fFeTargetZ[istation]/2.));
+    }
+
     //Creating Scifi planes by appending fiber mats
     for (int imat = 0; imat < fNMats; imat++){
+      int N = fNMats==1 ? imat : imat-1;
+      
       //Placing mats along Y 
-      ScifiHorPlaneVol->AddNode(HorMatVolume, 1e6*(istation+1) + 1e4*(imat + 1), new TGeoTranslation(0, (imat-1)*(fWidthScifiMat+fGapScifiMat), 0));
+      ScifiHorPlaneVol->AddNode(HorMatVolume, 1e6*(istation+1) + 1e4*(imat + 1), new TGeoTranslation(0, N*(fWidthScifiMat+fGapScifiMat), 0));
         
       //Placing mats along X
-      ScifiVertPlaneVol->AddNode(VertMatVolume, 1e6*(istation+1) + 1e5 + 1e4*(imat + 1), new TGeoTranslation((imat-1)*(fWidthScifiMat+fGapScifiMat), 0, 0));
+      ScifiVertPlaneVol->AddNode(VertMatVolume, 1e6*(istation+1) + 1e5 + 1e4*(imat + 1), new TGeoTranslation(N*(fWidthScifiMat+fGapScifiMat), 0, 0)); 
     }
   }
 
@@ -368,7 +398,8 @@ void Scifi::SiPMOverlap()
 
     Double_t SiPMArray_fullwidth = fEdge+fCharr+fCharrGap+fCharr+fEdge;
     TGeoVolumeAssembly *SiPMArrayVol;
-    Double_t pos = -fEdge+firstChannelX;
+    int N = fNMats == 1 ? 1 : 0;
+    Double_t pos = -fEdge+firstChannelX + N*fLengthScifiMat;
     for (int imat = 0; imat < fNMats; imat++){
       for (int isipms = 0; isipms < fNSiPMs; isipms++){
         pos+= fEdge;

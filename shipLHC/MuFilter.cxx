@@ -274,6 +274,12 @@ void MuFilter::ConstructGeometry()
 	Double_t dz = 0;
 	//Upstream Detector planes definition
 	Double_t fUpstreamDetZ =  conf_floats["MuFilter/UpstreamDetZ"];
+	
+	/* For the testbeam 2023, there is no Veto detector. However, to have the correct mapping of US and DS bars,
+	   one needs to have the standatd NvetoPlanes=2
+	   It is safe to go back to 2 'fictional' Veto planes now, after the Veto construction part. */
+	if (fNVetoPlanes != 2) fNVetoPlanes = 2;
+	
 	// local position of bottom horizontal bar to survey edge
 	TVector3 LocBarUS = TVector3(
 		-conf_floats["MuFilter/DSHLocX"],
@@ -348,10 +354,13 @@ void MuFilter::ConstructGeometry()
 	volMuDownstreamBar_ver->SetLineColor(kViolet-2);
 	AddSensitiveVolume(volMuDownstreamBar_ver);
 
+	// In testbeam 2023 det. layout, there is an iron block in front of the single DS plane!
+	int n_planes;
+	n_planes = fNDownstreamPlanes>1 ? fNDownstreamPlanes-1 : fNDownstreamPlanes;
+	
 	for(Int_t l=0; l<fNDownstreamPlanes; l++)
 	{
-	// add iron blocks
-	if (l<fNDownstreamPlanes-1){
+	if (l<n_planes){
 		displacement = edge_Iron[l+fNUpstreamPlanes+1] - TVector3(fFeBlockX/2,-fFeBlockY/2,-fFeBlockZ/2);
 		volMuFilter->AddNode(volFeBlock,l+fNUpstreamPlanes+fNVetoPlanes,
 				new TGeoTranslation(displacement.X(),displacement.Y(),displacement.Z()));
@@ -374,7 +383,7 @@ void MuFilter::ConstructGeometry()
 				new TGeoTranslation(displacement.X(),displacement.Y(),displacement.Z()));
 
 	//adding bars within each detector box
-	if (l!=fNDownstreamPlanes-1) {
+	if (l!=n_planes) {
 		displacement = TVector3(0, 0,0);
 		for (Int_t ibar = 0; ibar < fNDownstreamBars; ibar++){
 	                 //adding horizontal bars for y
