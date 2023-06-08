@@ -346,14 +346,14 @@ void Scifi::ConstructGeometry()
                new TGeoTranslation(DeltasV[istation][0], DeltasH[istation][1], DeltasH[istation][2]));
 
     //std::cout<<"deltas "<<DeltasV[istation][0]<<" "<< DeltasH[istation][1]<<" "<< DeltasH[istation][2]<<" "<<totalThickness<<std::endl;
-    // for 2023 testbeam put iron blocks of variable length in between SciFi planes - the planes are upstream of the blocks!
-    if (fNScifi==4 && istation < fNScifi-1) {
+    // for 2023 testbeam put iron blocks of variable length in between SciFi planes - the planes are dowstream of the blocks!
+    if (fNScifi==4 && istation != 0) {
        volFeTarget[istation] = gGeoManager->MakeBox(TString("volFeTarget"+station),Fe,fFeTargetX[istation]/2., fFeTargetY[istation]/2., fFeTargetZ[istation]/2.);
        volFeTarget[istation]->SetLineColor(kGreen-4);
        volTarget->AddNode(volFeTarget[istation],1,
                                          new TGeoTranslation(DeltasV[istation][0] ,
                                                              DeltasH[istation][1] ,
-                                                             DeltasH[istation][2] + totalThickness + fFeTargetZ[istation]/2.));
+                                                             DeltasH[istation][2] - fFeTargetZ[istation]/2.));
     }
 
     //Creating Scifi planes by appending fiber mats

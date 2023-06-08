@@ -356,10 +356,10 @@ with ConfigRegistry.register_config("basic") as c:
 # Local Scifi position of last channel (=first channel on technical drawing) on a horizontal scifi plane in software
            #c.Scifi.LfirstChannelHX,c.Scifi.LfirstChannelHY,c.Scifi.LfirstChannelHZ = -195.0*u.mm, 195.178*u.mm,  6.25*u.mm  # sipm on the right side direction away from IP1
 
-           # add 3 variable size iron blocks
-           c.Scifi.FeTargetX1, c.Scifi.FeTargetY1, c.Scifi.FeTargetZ1  = 30.*u.cm, 10.*u.cm, 30.*u.cm
-           c.Scifi.FeTargetX2, c.Scifi.FeTargetY2, c.Scifi.FeTargetZ2  = 30.*u.cm, 10.*u.cm, 30.*u.cm
+           # add 3 variable size iron blocks upstream of SciFi stations         
+           c.Scifi.FeTargetX2, c.Scifi.FeTargetY2, c.Scifi.FeTargetZ2  = 30.*u.cm, 6.*u.cm, 30.*u.cm
            c.Scifi.FeTargetX3, c.Scifi.FeTargetY3, c.Scifi.FeTargetZ3  = 30.*u.cm, 10.*u.cm, 30.*u.cm
+           c.Scifi.FeTargetX4, c.Scifi.FeTargetY4, c.Scifi.FeTargetZ4  = 30.*u.cm, 10.*u.cm, 30.*u.cm
 
 # absolute edge point positions in survey coordinate system (survey is 'by eye' for now)
            c.Scifi.Xpos0,c.Scifi.Ypos0,c.Scifi.Zpos0 = 156.6*u.mm,3186.3*u.mm,218.2*u.mm
