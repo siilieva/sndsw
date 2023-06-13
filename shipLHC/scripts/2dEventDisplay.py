@@ -578,7 +578,7 @@ def drawDetectors():
    for i in range(7,10):
       nodes['volMuFilter_1/volFeBlock_{}'.format(i)]=ROOT.kGreen-6
    passNodes = {'Block', 'Wall'}
-   xNodes = {'UpstreamBar', 'VetoBar', 'hor'}
+   xNodes = {'UpstreamDet', 'volVetoPlane', 'hor'}
    proj = {'X':0,'Y':1}
    for node_ in nodes:
       node = '/cave_1/Detector_0/'+node_
