@@ -834,8 +834,9 @@ void ConvRawData::DetMapping(string Path)
      {
        for ( auto slot : slots )
        {
-         s = 0;
+         s = 3;
          tmp = x.second.substr(0, x.second.find("_"));
+         if ( tmp =="Veto" ) s = 0;
          if ( tmp =="US" ) s = 1;
          if ( tmp=="DS" ) s = 2;
          if ( slots[slot.first] == x.first )
@@ -970,7 +971,7 @@ void ConvRawData::read_csv(string Path)
   vector<int> data_vector{};
   map<string, map<int, vector<int>> > SiPMmap{};
   vector<int> row{};
-  map<string, int> key { {"DS",2}, {"US",1}, {"Veto",0} };
+  map<string, int> key { {"BM",3}, {"DS",2}, {"US",1}, {"Veto",0} };
   struct stat buffer;
   TString sndRoot = gSystem->Getenv("SNDSW_ROOT");
   string sndswPath = sndRoot.Data();
