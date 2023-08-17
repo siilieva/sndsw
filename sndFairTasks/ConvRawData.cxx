@@ -837,7 +837,6 @@ void ConvRawData::DetMapping(string Path)
          if ( Path.find("testbeam_23") == string::npos ) s = 0;
          else s = 3;
          tmp = x.second.substr(0, x.second.find("_"));
-         if ( tmp =="Veto" ) s = 0;
          if ( tmp =="US" ) s = 1;
          if ( tmp=="DS" ) s = 2;
          if ( slots[slot.first] == x.first )
