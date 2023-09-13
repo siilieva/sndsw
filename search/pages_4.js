@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['sndsw_19817',['sndsw',['../md_README.html',1,'']]],
-  ['sndsw_20class_20reference_19818',['SNDSW Class Reference',['../index.html',1,'']]]
+  ['sndsw_19823',['sndsw',['../md_README.html',1,'']]],
+  ['sndsw_20class_20reference_19824',['SNDSW Class Reference',['../index.html',1,'']]]
 ];
