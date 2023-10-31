@@ -419,6 +419,9 @@ def loopEvents(
           rc=h[collection][c][1].SetName(c)
           rc=h[collection][c][1].Set(0)
 
+    if hitColour is not None :
+           h["markerCollection"] = []
+
     #Do we still use these lines? Seems no. 
     #And for events having all negative QDCs minT[1] is returned empty and the display crashes.
     #dTs = "%5.2Fns"%(dT/freq*1E9)
