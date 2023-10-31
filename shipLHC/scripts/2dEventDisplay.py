@@ -337,11 +337,12 @@ def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-
           rc=h[collection][c][1].SetName(c)
           rc=h[collection][c][1].Set(0)
 
-    dTs = "%5.2Fns"%(dT/freq*1E9)
+    #Do we still use these lines? Seems no. 
+    #And for events having all negative QDCs minT[1] is returned empty and the display crashes.
+    #dTs = "%5.2Fns"%(dT/freq*1E9)
     # find detector which triggered
-    minT = firstTimeStamp(event)
-    if minT[0] < 1000000000:
-        dTs+= "    " + str(minT[1].GetDetectorID())
+    #minT = firstTimeStamp(event)
+    #dTs+= "    " + str(minT[1].GetDetectorID())
     for p in proj:
        rc = h[ 'simpleDisplay'].cd(p)
        h[proj[p]].Draw('b')
