@@ -294,10 +294,12 @@ class MuonReco(ROOT.FairTask) :
                # Use SciFi hits or clusters
                self.Scifi_meas = int(case[self.tracking_case]['use_Scifi_clust'])
                # Maximum absolute value of reconstructed angle (+/- 1 rad is the maximum angle to form a triplet in the SciFi)
-               if case[self.tracking_case]['max_angle']['unit'] in dir(unit):
-                  max_angle = float(case[self.tracking_case]['max_angle']['value'])
+               u = case[self.tracking_case]['max_angle']['unit']
+               if u in dir(unit):
+                  max_angle = float(case[self.tracking_case]['max_angle']['value'])*eval('unit.'+u)
                else:
-                  raise RuntimeError("Unsupported unit provided for 'max_angle'! Check units in shipunit module")
+                  raise RuntimeError("Unsupported unit '" + u + "' provided for 'max_angle'!\
+                                      Check units in shipunit module.")
 
                # Hough space representation
                Hspace_format_exists = False 
@@ -315,10 +317,12 @@ class MuonReco(ROOT.FairTask) :
                                'yH_max_yz' : yH_max_yz, 'xH_min_xz': xH_min_xz, 'xH_max_xz': xH_max_xz, \
                                'xH_min_yz' : xH_min_yz, 'xH_max_yz': xH_max_yz}
                       for sub_item in items:
-                          if rep[self.Hough_space_format][sub_item]['unit'] in dir(unit):
-                             items[sub_item] = float(rep[self.Hough_space_format][sub_item]['value'])
+                          u = rep[self.Hough_space_format][sub_item]['unit']
+                          if u in dir(unit):
+                             items[sub_item] = float(rep[self.Hough_space_format][sub_item]['value'])*eval('unit.'+u)
                           else:
-                             raise RuntimeError("Unsupported unit provided for '" + sub_item + "'! Check units in shipunit module")
+                             raise RuntimeError("Unsupported unit '" + u + "' provided for '" + sub_item + "'!\
+                                                 Check units in shipunit module.")
 
                    else: continue
                if not Hspace_format_exists:
@@ -342,10 +346,12 @@ class MuonReco(ROOT.FairTask) :
                self.max_reco_muons = int(case[self.tracking_case]['max_reco_muons'])
 
                # How far away from Hough line hits will be assigned to the muon, for Kalman tracking
-               if case[self.tracking_case]['tolerance']['unit'] in dir(unit):
-                  self.tolerance = float(case[self.tracking_case]['tolerance']['value'])
+               u = case[self.tracking_case]['tolerance']['unit']
+               if u in dir(unit):
+                  self.tolerance = float(case[self.tracking_case]['tolerance']['value'])*eval('unit.'+u)
                else:
-                  raise RuntimeError("Unsupported unit provided for 'tolerance'! Check units in shipunit module")
+                  raise RuntimeError("Unsupported unit '" + u + "' provided for 'tolerance'!\
+                                      Check units in shipunit module.")
 
                # Which hits to use for track fitting.
                self.hits_to_fit = case[self.tracking_case]['hits_to_fit'].strip()
