@@ -294,8 +294,11 @@ class MuonReco(ROOT.FairTask) :
                # Use SciFi hits or clusters
                self.Scifi_meas = int(case[self.tracking_case]['use_Scifi_clust'])
                # Maximum absolute value of reconstructed angle (+/- 1 rad is the maximum angle to form a triplet in the SciFi)
-               max_angle = float(case[self.tracking_case]['max_angle']['value'])
-               
+               if case[self.tracking_case]['max_angle']['unit'] in dir(unit):
+                  max_angle = float(case[self.tracking_case]['max_angle']['value'])
+               else:
+                  raise RuntimeError("Unsupported unit provided for 'max_angle'! Check units in shipunit module")
+
                # Hough space representation
                Hspace_format_exists = False 
                for rep in case[self.tracking_case]['Hough_space_format']:
@@ -306,15 +309,16 @@ class MuonReco(ROOT.FairTask) :
                           xz and yz represent horizontal and vertical projections 
                           in the SNDLHC physics coord. system '''
                       n_accumulator_yH = int(rep[self.Hough_space_format]['N_yH_bins'])
-                      yH_min_xz = float(rep[self.Hough_space_format]['yH_min_xz']['value'])
-                      yH_max_xz = float(rep[self.Hough_space_format]['yH_max_xz']['value'])
-                      yH_min_yz = float(rep[self.Hough_space_format]['yH_min_yz']['value'])
-                      yH_max_yz = float(rep[self.Hough_space_format]['yH_max_yz']['value'])
                       n_accumulator_xH = int(rep[self.Hough_space_format]['N_xH_bins'])
-                      xH_min_xz = float(rep[self.Hough_space_format]['xH_min_xz']['value'])
-                      xH_max_xz = float(rep[self.Hough_space_format]['xH_max_xz']['value'])
-                      xH_min_yz = float(rep[self.Hough_space_format]['xH_min_yz']['value'])
-                      xH_max_yz = float(rep[self.Hough_space_format]['xH_max_yz']['value'])
+                      yH_min_xz = yH_max_xz = yH_min_yz = yH_max_yz = xH_min_xz = xH_max_xz = xH_min_yz = xH_max_yz = 0
+                      items = {'yH_min_xz' : yH_min_xz, 'yH_max_xz': yH_max_xz, 'yH_min_yz': yH_min_yz, \
+                               'yH_max_yz' : yH_max_yz, 'xH_min_xz': xH_min_xz, 'xH_max_xz': xH_max_xz, \
+                               'xH_min_yz' : xH_min_yz, 'xH_max_yz': xH_max_yz}
+                      for sub_item in items:
+                          if rep[self.Hough_space_format][sub_item]['unit'] in dir(unit):
+                             items[sub_item] = float(rep[self.Hough_space_format][sub_item]['value'])
+                          else:
+                             raise RuntimeError("Unsupported unit provided for '" + sub_item + "'! Check units in shipunit module")
 
                    else: continue
                if not Hspace_format_exists:
@@ -338,7 +342,10 @@ class MuonReco(ROOT.FairTask) :
                self.max_reco_muons = int(case[self.tracking_case]['max_reco_muons'])
 
                # How far away from Hough line hits will be assigned to the muon, for Kalman tracking
-               self.tolerance = float(case[self.tracking_case]['tolerance']['value'])
+               if case[self.tracking_case]['tolerance']['unit'] in dir(unit):
+                  self.tolerance = float(case[self.tracking_case]['tolerance']['value'])
+               else:
+                  raise RuntimeError("Unsupported unit provided for 'tolerance'! Check units in shipunit module")
 
                # Which hits to use for track fitting.
                self.hits_to_fit = case[self.tracking_case]['hits_to_fit'].strip()

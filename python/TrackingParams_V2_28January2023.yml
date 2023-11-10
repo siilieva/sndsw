@@ -38,7 +38,7 @@ tracking_case:
 #     (+/- 1 rad is the maximum angle to form a triplet in the SciFi)
 #     The unit field is helper and not used in the code!
       max_angle:
-        required unit: rad
+        unit: rad
         value: 1.
 #     Number of random throws per measurement
       n_random: 5
@@ -46,7 +46,7 @@ tracking_case:
       mufi_weight: 100
 #     How far away from Hough line hits assigned to the muon can be?
       tolerance:
-        required unit: cm
+        unit: cm
         value: 0.
 #     Enable Gaussian smoothing of the Hough-space image.
 #     For 'ds' HT prediction, do a full accumulator smoothing.
@@ -64,83 +64,83 @@ tracking_case:
         - normal:
             N_yH_bins: 1000
             yH_min_xz:
-              required unit: cm
+              unit: cm
               value: -80.
             yH_max_xz:
-              required unit: cm
+              unit: cm
               value: 0.
             yH_min_yz:
-              required unit: cm
+              unit: cm
               value: 0.
             yH_max_yz:
-              required unit: cm
+              unit: cm
               value: 80.
             N_xH_bins: 2500
             xH_min_xz:
-              required unit: rad
+              unit: rad
               value: -1.57
             xH_max_xz:
-              required unit: rad
+              unit: rad
               value: 1.57
             xH_min_yz:
-              required unit: rad
+              unit: rad
               value: -1.57
             xH_max_yz:
-              required unit: rad
+              unit: rad
               value: 1.57
         - linearSlopeIntercept:
             N_yH_bins: 610
             yH_min_xz:
-              required unit: cm
+              unit: cm
               value: -105.
             yH_max_xz:
-              required unit: cm
+              unit: cm
               value: 17.
             yH_min_yz:
-              required unit: cm
+              unit: cm
               value: 0.
             yH_max_yz:
-              required unit: cm
+              unit: cm
               value: 122.
             N_xH_bins: 220
             xH_min_xz:
-              required unit: rad
+              unit: rad
               value: -1.1
             xH_max_xz:
-              required unit: rad
+              unit: rad
               value: 1.1
             xH_min_yz:
-              required unit: rad
+              unit: rad
               value: -1.1
             xH_max_yz:
-              required unit: rad
+              unit: rad
               value: 1.1
         - linearIntercepts:
             N_yH_bins: 610
             yH_min_xz:
-              required unit: cm
+              unit: cm
               value: -105.
             yH_max_xz:
-              required unit: cm
+              unit: cm
               value: 17.
             yH_min_yz:
-              required unit: cm
+              unit: cm
               value: 0.
             yH_max_yz:
-              required unit: cm
+              unit: cm
               value: 122.
             N_xH_bins: 610
             xH_min_xz:
-             required unit: cm
+             unit: cm
              value: -105.
             xH_max_xz:
-              required unit: cm
+              unit: cm
               value: 17.
             xH_min_yz:
-              required unit: cm
+              unit: cm
               value: 0.
             xH_max_yz:
-              required unit: cm
+              unit: cm
               value: 122.
 #     Helpers to select one HT space maxima among many.
 #     The n-th quantile of found peaks along 'slope' axis(yH axis) must enlose
@@ -180,7 +180,7 @@ tracking_case:
 #     (+/- 1 rad is the maximum angle to form a triplet in the SciFi)
 #     The unit field is helper and not used in the code!
       max_angle:
-        required unit: rad
+        unit: rad
         value: 1.
 #     Number of random throws per measurement
       n_random: 0
@@ -188,7 +188,7 @@ tracking_case:
       mufi_weight: 1
 #     How far away from Hough line hits assigned to the muon can be?
       tolerance:
-        required unit: cm
+        unit: cm
         value: 0.1
 #     Enable Gaussian smoothing of the Hough-space image.
 #     For 'ds' HT prediction, do a full accumulator smoothing.
@@ -206,83 +206,83 @@ tracking_case:
         - normal:
             N_yH_bins: 10000
             yH_min_xz:
-              required unit: cm
+              unit: cm
               value: -85.
             yH_max_xz:
-              required unit: cm
+              unit: cm
               value: 85.
             yH_min_yz:
-              required unit: cm
+              unit: cm
               value: -85.
             yH_max_yz:
-              required unit: cm
+              unit: cm
               value: 85.
             N_xH_bins: 10000
             xH_min_xz:
-              required unit: rad
+              unit: rad
               value: -1.57
             xH_max_xz:
-              required unit: rad
+              unit: rad
               value: 1.57
             xH_min_yz:
-              required unit: rad
+              unit: rad
               value: -1.57
             xH_max_yz:
-              required unit: rad
+              unit: rad
               value: 1.57
         - linearSlopeIntercept:
             N_yH_bins: 7000
             yH_min_xz:
-              required unit: cm
+              unit: cm
               value: -100.
             yH_max_xz:
-              required unit: cm
+              unit: cm
               value: 40.
             yH_min_yz:
-              required unit: cm
+              unit: cm
               value: -35.
             yH_max_yz:
-              required unit: cm
+              unit: cm
               value: 105.
             N_xH_bins: 7000
             xH_min_xz:
-              required unit: rad
+              unit: rad
               value: -1.1
             xH_max_xz:
-              required unit: rad
+              unit: rad
               value: 1.1
             xH_min_yz:
-              required unit: rad
+              unit: rad
               value: -1.1
             xH_max_yz:
-              required unit: rad
+              unit: rad
               value: 1.1
         - linearIntercepts:
             N_yH_bins: 7000
             yH_min_xz:
-              required unit: cm
+              unit: cm
               value: -100.
             yH_max_xz:
-              required unit: cm
+              unit: cm
               value: 40.
             yH_min_yz:
-              required unit: cm
+              unit: cm
               value: -35.
             yH_max_yz:
-              required unit: cm
+              unit: cm
               value: 105.
             N_xH_bins: 7000
             xH_min_xz:
-              required unit: cm
+              unit: cm
               value: -100.
             xH_max_xz:
-              required unit: cm
+              unit: cm
               value: 40.
             xH_min_yz:
-              required unit: cm
+              unit: cm
               value: -35.
             xH_max_yz:
-              required unit: cm
+              unit: cm
               value: 105.
 #     Helpers to select one HT space maxima among many.
 #     The n-th quantile of found peaks along 'slope' axis(yH axis) must enlose
@@ -322,7 +322,7 @@ tracking_case:
 #     (+/- 1 rad is the maximum angle to form a triplet in the SciFi)
 #     The unit field is helper and not used in the code!
       max_angle:
-        required unit: rad
+        unit: rad
         value: 1.
 #     Number of random throws per measurement
       n_random: 0
@@ -330,7 +330,7 @@ tracking_case:
       mufi_weight: 1
 #     How far away from Hough line hits assigned to the muon can be?
       tolerance:
-        required unit: cm
+        unit: cm
         value: 1
 #     Enable Gaussian smoothing of the Hough-space image.
 #     For 'ds' HT prediction, do a full accumulator smoothing.
@@ -348,83 +348,83 @@ tracking_case:
         - normal:
             N_yH_bins: 1152
             yH_min_xz:
-              required unit: cm
+              unit: cm
               value: -576.
             yH_max_xz:
-              required unit: cm
+              unit: cm
               value: 576.
             yH_min_yz:
-              required unit: cm
+              unit: cm
               value: -576.
             yH_max_yz:
-              required unit: cm
+              unit: cm
               value: 576.
             N_xH_bins: 2500
             xH_min_xz:
-              required unit: rad
+              unit: rad
               value: -1.57
             xH_max_xz:
-              required unit: rad
+              unit: rad
               value: 1.57
             xH_min_yz:
-              required unit: rad
+              unit: rad
               value: -1.57
             xH_max_yz:
-              required unit: rad
+              unit: rad
               value: 1.57
         - linearSlopeIntercept:
             N_yH_bins: 122
             yH_min_xz:
-              required unit: cm
+              unit: cm
               value: -105.
             yH_max_xz:
-              required unit: cm
+              unit: cm
               value: 17.
             yH_min_yz:
-              required unit: cm
+              unit: cm
               value: 0.
             yH_max_yz:
-              required unit: cm
+              unit: cm
               value: 122.
             N_xH_bins: 220
             xH_min_xz:
-              required unit: rad
+              unit: rad
               value: -1.1
             xH_max_xz:
-              required unit: rad
+              unit: rad
               value: 1.1
             xH_min_yz:
-              required unit: rad
+              unit: rad
               value: -1.1
             xH_max_yz:
-              required unit: rad
+              unit: rad
               value: 1.1
         - linearIntercepts:
             N_yH_bins: 610
             yH_min_xz:
-              required unit: cm
+              unit: cm
               value: -105.
             yH_max_xz:
-              required unit: cm
+              unit: cm
               value: 17.
             yH_min_yz:
-              required unit: cm
+              unit: cm
               value: 0.
             yH_max_yz:
-              required unit: cm
+              unit: cm
               value: 122.
             N_xH_bins: 610
             xH_min_xz:
-              required unit: cm
+              unit: cm
               value: -105.
             xH_max_xz:
-              required unit: cm
+              unit: cm
               value: 17.
             xH_min_yz:
-              required unit: cm
+              unit: cm
               value: 0.
             xH_max_yz:
-              required unit: cm
+              unit: cm
               value: 122.
 #     Helpers to select one HT space maxima among many.
 #     The n-th quantile of found peaks along 'slope' axis(yH axis) must enlose
