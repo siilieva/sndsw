@@ -213,6 +213,10 @@ def numPlanesHit(systems, detector_ids) :
     mufi_us_planes.append( (detector_ids[systems == 2]%10000)//1000 )
 
     return len(np.unique(scifi_stations)) + len(np.unique(mufi_ds_planes)) + len(np.unique(mufi_us_planes))
+
+def checkUnit(param, u):
+    if u not in dir(unit):
+       raise RuntimeError("Unsupported unit '"+u+"' provided for '"+param+"'! Check units in shipunit module.")
     
 class MuonReco(ROOT.FairTask) :
     " Muon reconstruction "
@@ -295,11 +299,8 @@ class MuonReco(ROOT.FairTask) :
                self.Scifi_meas = int(case[self.tracking_case]['use_Scifi_clust'])
                # Maximum absolute value of reconstructed angle (+/- 1 rad is the maximum angle to form a triplet in the SciFi)
                u = case[self.tracking_case]['max_angle']['unit']
-               if u in dir(unit):
-                  max_angle = float(case[self.tracking_case]['max_angle']['value'])*eval('unit.'+u)
-               else:
-                  raise RuntimeError("Unsupported unit '" + u + "' provided for 'max_angle'!\
-                                      Check units in shipunit module.")
+               checkUnit('max_angle', u)
+               max_angle = float(case[self.tracking_case]['max_angle']['value'])*eval('unit.'+u)
 
                # Hough space representation
                Hspace_format_exists = False 
@@ -318,11 +319,9 @@ class MuonReco(ROOT.FairTask) :
                                'xH_min_yz' : xH_min_yz, 'xH_max_yz': xH_max_yz}
                       for sub_item in items:
                           u = rep[self.Hough_space_format][sub_item]['unit']
-                          if u in dir(unit):
-                             items[sub_item] = float(rep[self.Hough_space_format][sub_item]['value'])*eval('unit.'+u)
-                          else:
-                             raise RuntimeError("Unsupported unit '" + u + "' provided for '" + sub_item + "'!\
-                                                 Check units in shipunit module.")
+                          checkUnit(sub_item, u)
+                          items[sub_item] = float(rep[self.Hough_space_format][sub_item]['value'])*eval('unit.'+u)
+
 
                    else: continue
                if not Hspace_format_exists:
@@ -347,11 +346,8 @@ class MuonReco(ROOT.FairTask) :
 
                # How far away from Hough line hits will be assigned to the muon, for Kalman tracking
                u = case[self.tracking_case]['tolerance']['unit']
-               if u in dir(unit):
-                  self.tolerance = float(case[self.tracking_case]['tolerance']['value'])*eval('unit.'+u)
-               else:
-                  raise RuntimeError("Unsupported unit '" + u + "' provided for 'tolerance'!\
-                                      Check units in shipunit module.")
+               checkUnit('tolerance', u)
+               self.tolerance = float(case[self.tracking_case]['tolerance']['value'])*eval('unit.'+u)
 
                # Which hits to use for track fitting.
                self.hits_to_fit = case[self.tracking_case]['hits_to_fit'].strip()
