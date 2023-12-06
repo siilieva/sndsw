@@ -320,13 +320,7 @@ with ConfigRegistry.register_config("basic") as c:
            c.MuFilter.FeBotX,c.MuFilter.FeBotY,c.MuFilter.FeBotZ   = 0*u.cm, 0*u.cm, 0*u.cm
 
            # removing the emulsion+W target
-           #c.EmulsionDet.wall= 0 # this causes a crash..
-           # so move emulsion det part out of the way
-           c.EmulsionDet.ydim = 0 # no zdim to remove the border
-           c.EmulsionDet.n_plates = 0 # remove doublets emulsion + Pb
-           c.EmulsionDet.TotalWallZDim = 0.0 *u.cm # wall dimension along z, including border is set to 0
-           c.EmulsionDet.EmX, c.EmulsionDet.EmY = 0, 0 # remove last remains in the display
-           c.EmulsionDet.Ypos0 , c.EmulsionDet.Ypos1, c.EmulsionDet.Ypos2, c.EmulsionDet.Ypos3, c.EmulsionDet.Ypos4 = 600*u.cm, 600*u.cm, 600*u.cm, 600*u.cm, 600*u.cm
+           c.EmulsionDet.wall = 0
 
            # set SciFi modules
            c.Scifi.xdim = 13.0*u.cm #sensitive only
