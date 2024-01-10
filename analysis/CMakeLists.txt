@@ -20,4 +20,4 @@ ${FAIRROOT_LIBRARY_DIR}
 link_directories( ${LINK_DIRECTORIES})
 
 add_executable(neutrinoFilterGoldenSample neutrinoFilterGoldenSample.cxx)
-target_link_libraries(neutrinoFilterGoldenSample ${ROOT_LIBRARIES} sndCuts)
+target_link_libraries(neutrinoFilterGoldenSample ${ROOT_LIBRARIES} snd_analysis_tools snd_analysis_cuts)
