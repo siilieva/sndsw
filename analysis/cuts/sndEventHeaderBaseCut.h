@@ -7,15 +7,18 @@
 #include "SNDLHCEventHeader.h"
 #include "TChain.h"
 
-namespace sndAnalysis {
+namespace snd {
+  namespace analysis_cuts {
   
-  class EventHeaderBaseCut : public baseCut {
+    class EventHeaderBaseCut : public snd::analysis_cuts::baseCut {
 
-  protected :
-    static SNDLHCEventHeader * header;
-    static TChain * tree;
+    protected :
+      static SNDLHCEventHeader * header;
+      static TChain * tree;
 
-    EventHeaderBaseCut(TChain * ch);
-    ~EventHeaderBaseCut(){;}
-  };
+      EventHeaderBaseCut(TChain * ch);
+      ~EventHeaderBaseCut(){;}
+    };
+
+  }
 }

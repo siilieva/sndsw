@@ -7,14 +7,16 @@
 #include "TChain.h"
 #include "TClonesArray.h"
 
-namespace sndAnalysis {
-  
-  class MuFilterBaseCut : public baseCut {
+namespace snd {
+  namespace analysis_cuts {
+    class MuFilterBaseCut : public snd::analysis_cuts::baseCut {
 
-  protected :
-    static TClonesArray * muFilterDigiHitCollection;
+    protected :
+      static TClonesArray * muFilterDigiHitCollection;
 
-    MuFilterBaseCut(TChain * ch);
-    ~MuFilterBaseCut(){;}
-  };
+      MuFilterBaseCut(TChain * ch);
+      ~MuFilterBaseCut(){;}
+    };
+
+  }
 }

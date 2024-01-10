@@ -5,15 +5,18 @@
 #include "TChain.h"
 #include "sndScifiHit.h"
 
-namespace sndAnalysis {
-  class minSciFiHits : public sciFiBaseCut {
-  private :
-    int hitThreshold;
-  public :
-    minSciFiHits(int threshold, TChain * tree);
-    ~minSciFiHits(){;}
+namespace snd {
+  namespace analysis_cuts {
+    class minSciFiHits : public snd::analysis_cuts::sciFiBaseCut {
+    private :
+      int hitThreshold;
+    public :
+      minSciFiHits(int threshold, TChain * tree);
+      ~minSciFiHits(){;}
 
-    bool passCut();
+      bool passCut();
 
-  };
-};
+    };
+
+  }
+}

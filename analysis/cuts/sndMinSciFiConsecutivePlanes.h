@@ -5,13 +5,16 @@
 #include "TChain.h"
 #include "sndScifiHit.h"
 
-namespace sndAnalysis {
-  class minSciFiConsecutivePlanes : public sciFiBaseCut {
-  public :
-    minSciFiConsecutivePlanes(TChain * tree);
-    ~minSciFiConsecutivePlanes(){;}
+namespace snd {
+  namespace analysis_cuts {
+    class minSciFiConsecutivePlanes : public snd::analysis_cuts::sciFiBaseCut {
+    public :
+      minSciFiConsecutivePlanes(TChain * tree);
+      ~minSciFiConsecutivePlanes(){;}
 
-    bool passCut();
+      bool passCut();
 
-  };
-};
+    };
+
+  }
+}

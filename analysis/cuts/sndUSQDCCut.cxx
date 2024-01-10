@@ -9,7 +9,7 @@
 #include <map>
 #include <numeric>
 
-namespace sndAnalysis {
+namespace snd::analysis_cuts {
 
   USQDCCut::USQDCCut(float threshold, TChain * ch) : MuFilterBaseCut(ch) {
     qdc_threshold = threshold;

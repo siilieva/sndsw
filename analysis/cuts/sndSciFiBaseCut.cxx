@@ -6,7 +6,7 @@
 #include "TChain.h"
 #include "sndScifiHit.h"
 
-namespace sndAnalysis {
+namespace snd::analysis_cuts {
 
   TClonesArray * sciFiBaseCut::scifiDigiHitCollection = 0;
   TChain * sciFiBaseCut::tree = 0;

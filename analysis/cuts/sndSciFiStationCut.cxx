@@ -4,7 +4,7 @@
 
 #include "TChain.h"
 
-namespace sndAnalysis{
+namespace snd::analysis_cuts{
   sciFiStationCut::sciFiStationCut(float threshold, std::vector<int> excluded_stations, TChain * tree) : sciFiBaseCut(tree){
     fractionThreshold = threshold;
     stations_to_exclude = std::vector(excluded_stations);
@@ -26,7 +26,7 @@ namespace sndAnalysis{
   bool sciFiStationCut::passCut(){
     initializeEvent();
     
-    int station = findStation(hits_per_plane_horizontal, hits_per_plane_vertical, fractionThreshold);
+    int station = snd::analysis_tools::findScifiStation(hits_per_plane_horizontal, hits_per_plane_vertical, fractionThreshold);
     
     plot_var[0] = station;
 

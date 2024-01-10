@@ -7,7 +7,7 @@
 #include <vector>
 #include <numeric>
 
-namespace sndAnalysis {
+namespace snd::analysis_cuts {
 
   DSActivityCut::DSActivityCut(TChain * ch) : MuFilterBaseCut(ch) {
     cutName = "If there are DS hits, all US planes must be hit";

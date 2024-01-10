@@ -2,7 +2,7 @@
 
 #include "TChain.h"
 
-namespace sndAnalysis{
+namespace snd::analysis_cuts {
   avgDSFiducialCut::avgDSFiducialCut(double vertical_min_cut, double vertical_max_cut, double horizontal_min_cut, double horizontal_max_cut, TChain * tree) : MuFilterBaseCut(tree){
     vertical_min = vertical_min_cut;
     vertical_max = vertical_max_cut;
