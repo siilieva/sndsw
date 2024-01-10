@@ -4,12 +4,15 @@
 
 #include "TChain.h"
 
-namespace sndAnalysis {
-  
-  class DSActivityCut : public MuFilterBaseCut {
-  public :
-    DSActivityCut(TChain * ch);
-    ~DSActivityCut(){;}
-    bool passCut();
-  };
+namespace snd {
+  namespace analysis_cuts {
+
+    class DSActivityCut : public snd::analysis_cuts::MuFilterBaseCut {
+    public :
+      DSActivityCut(TChain * ch);
+      ~DSActivityCut(){;}
+      bool passCut();
+    };
+
+  }
 }

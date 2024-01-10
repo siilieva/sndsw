@@ -1,4 +1,15 @@
-set(SND_CUTS_SRCS
+set(INCLUDE_DIRECTORIES
+${SYSTEM_INCLUDE_DIRECTORIES}
+${VMC_INCLUDE_DIRS}
+${CMAKE_SOURCE_DIR}/shipdata
+${CMAKE_SOURCE_DIR}/shipLHC
+${CMAKE_SOURCE_DIR}/analysis/cuts
+${FMT_INCLUDE_DIR}
+)
+
+include_directories( ${INCLUDE_DIRECTORIES} )
+
+set(SRCS
 sndSciFiBaseCut.cxx
 sndMuFilterBaseCut.cxx
 sndMinSciFiHitsCut.cxx
@@ -20,5 +31,9 @@ ${FAIRROOT_LIBRARY_DIR}
  
 link_directories( ${LINK_DIRECTORIES})
 
-add_library(sndCuts SHARED ${SND_CUTS_SRCS})
-target_link_libraries(sndCuts ${ROOT_LIBRARIES} sndTools shipLHC veto)
+Set(HEADERS )
+Set(LINKDEF AnalysisCutsLinkDef.h)
+Set(LIBRARY_NAME snd_analysis_cuts)
+Set(DEPENDENCIES shipLHC veto)
+
+GENERATE_LIBRARY()

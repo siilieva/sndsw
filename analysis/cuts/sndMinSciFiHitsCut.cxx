@@ -4,7 +4,7 @@
 
 #include "TChain.h"
 
-namespace sndAnalysis{
+namespace snd::analysis_cuts{
   minSciFiHits::minSciFiHits(int threshold, TChain * tree) : sciFiBaseCut(tree){
     hitThreshold = threshold;
     cutName = "More than "+std::to_string(hitThreshold)+" SciFi hits";
@@ -17,7 +17,7 @@ namespace sndAnalysis{
 
   bool minSciFiHits::passCut(){
     initializeEvent();
-    plot_var[0] = getTotalSciFiHits(hits_per_plane_horizontal, hits_per_plane_vertical);
+    plot_var[0] = snd::analysis_tools::getTotalSciFiHits(hits_per_plane_horizontal, hits_per_plane_vertical);
     if ( plot_var[0] < hitThreshold) return false;
     return true;
   }

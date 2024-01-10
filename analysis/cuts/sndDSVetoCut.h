@@ -4,12 +4,15 @@
 
 #include "TChain.h"
 
-namespace sndAnalysis {
-  
-  class DSVetoCut : public MuFilterBaseCut {
-  public :
-    DSVetoCut(TChain * ch);
-    ~DSVetoCut(){;}
-    bool passCut();
-  };
+namespace snd {
+  namespace analysis_cuts {
+
+    class DSVetoCut : public snd::analysis_cuts::MuFilterBaseCut {
+    public :
+      DSVetoCut(TChain * ch);
+      ~DSVetoCut(){;}
+      bool passCut();
+    };
+
+  }
 }

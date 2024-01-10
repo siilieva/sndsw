@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace sndAnalysis {
+namespace snd::analysis_cuts {
 
   eventDeltatCut::eventDeltatCut(int delta_event, int delta_timestamp, TChain * ch) : EventHeaderBaseCut(ch) {
     delta_e = delta_event;

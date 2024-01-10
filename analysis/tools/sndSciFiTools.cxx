@@ -6,7 +6,7 @@
 #include "TClonesArray.h"
 #include "sndScifiHit.h"
 
-void sndAnalysis::getSciFiHitsPerStation(TClonesArray * digiHits, std::vector<int> &horizontal_hits, std::vector<int> &vertical_hits){
+void snd::analysis_tools::getSciFiHitsPerStation(TClonesArray * digiHits, std::vector<int> &horizontal_hits, std::vector<int> &vertical_hits){
 
   // Clear hits per plane vectors
   std::fill(horizontal_hits.begin(), horizontal_hits.end(), 0);
@@ -28,14 +28,14 @@ void sndAnalysis::getSciFiHitsPerStation(TClonesArray * digiHits, std::vector<in
   }
 }
 
-int sndAnalysis::getTotalSciFiHits(std::vector<int> &horizontal_hits, std::vector<int> &vertical_hits){
+int snd::analysis_tools::getTotalSciFiHits(std::vector<int> &horizontal_hits, std::vector<int> &vertical_hits){
   return std::accumulate(horizontal_hits.begin(),
 			 horizontal_hits.end(),
 			 std::accumulate(vertical_hits.begin(),
 					 vertical_hits.end(), 0));
 }
 
-int sndAnalysis::getTotalSciFiHits(TClonesArray * digiHits){
+int snd::analysis_tools::getTotalSciFiHits(TClonesArray * digiHits){
   std::vector<int> horizontal_hits = std::vector<int>(5);
   std::vector<int> vertical_hits = std::vector<int>(5);
     
@@ -44,7 +44,7 @@ int sndAnalysis::getTotalSciFiHits(TClonesArray * digiHits){
   return getTotalSciFiHits(horizontal_hits, vertical_hits);
 }
 
-std::vector<float> sndAnalysis::getFractionalHitsPerPlane(std::vector<int> &horizontal_hits, std::vector<int> &vertical_hits){
+std::vector<float> snd::analysis_tools::getFractionalHitsPerScifiPlane(std::vector<int> &horizontal_hits, std::vector<int> &vertical_hits){
     
   int total_hits = getTotalSciFiHits(horizontal_hits, vertical_hits);
     
@@ -61,19 +61,19 @@ std::vector<float> sndAnalysis::getFractionalHitsPerPlane(std::vector<int> &hori
     
 }
 
-std::vector<float> sndAnalysis::getFractionalHitsPerPlane(TClonesArray * digiHits){
+std::vector<float> snd::analysis_tools::getFractionalHitsPerScifiPlane(TClonesArray * digiHits){
   std::vector<int> horizontal_hits = std::vector<int>(5);
   std::vector<int> vertical_hits = std::vector<int>(5);
     
   getSciFiHitsPerStation(digiHits, horizontal_hits, vertical_hits);
     
-  return getFractionalHitsPerPlane(horizontal_hits, vertical_hits);
+  return getFractionalHitsPerScifiPlane(horizontal_hits, vertical_hits);
 }
   
   
-int sndAnalysis::findStation(std::vector<int> &horizontal_hits, std::vector<int> &vertical_hits, float threshold){
+int snd::analysis_tools::findScifiStation(std::vector<int> &horizontal_hits, std::vector<int> &vertical_hits, float threshold){
 
-  std::vector<float> frac = getFractionalHitsPerPlane(horizontal_hits, vertical_hits);
+  std::vector<float> frac = getFractionalHitsPerScifiPlane(horizontal_hits, vertical_hits);
     
   std::vector<float> frac_sum = std::vector<float>(frac.size());
     
@@ -88,12 +88,12 @@ int sndAnalysis::findStation(std::vector<int> &horizontal_hits, std::vector<int>
     
 }
 
-int sndAnalysis::findStation(TClonesArray * digiHits, float threshold){
+int snd::analysis_tools::findScifiStation(TClonesArray * digiHits, float threshold){
   std::vector<int> horizontal_hits = std::vector<int>(5);
   std::vector<int> vertical_hits = std::vector<int>(5);
     
   getSciFiHitsPerStation(digiHits, horizontal_hits, vertical_hits);
 
-  return findStation(horizontal_hits, vertical_hits, threshold);
+  return findScifiStation(horizontal_hits, vertical_hits, threshold);
 }
 

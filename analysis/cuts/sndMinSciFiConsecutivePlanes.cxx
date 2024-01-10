@@ -4,7 +4,7 @@
 
 #include "TChain.h"
 
-namespace sndAnalysis{
+namespace snd::analysis_cuts{
   minSciFiConsecutivePlanes::minSciFiConsecutivePlanes(TChain * tree) : sciFiBaseCut(tree){
     cutName = "Two or more consecutive SciFi planes";
 

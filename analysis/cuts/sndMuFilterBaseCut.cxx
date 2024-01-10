@@ -5,7 +5,7 @@
 #include "TClonesArray.h"
 #include "MuFilterHit.h"
 
-namespace sndAnalysis {
+namespace snd::analysis_cuts {
 
   TClonesArray * MuFilterBaseCut::muFilterDigiHitCollection = 0;
 

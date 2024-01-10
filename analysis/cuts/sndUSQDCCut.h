@@ -4,14 +4,17 @@
 
 #include "TChain.h"
 
-namespace sndAnalysis {
+namespace snd {
+  namespace analysis_cuts {
   
-  class USQDCCut : public MuFilterBaseCut {
-  private :
-    float qdc_threshold;
-  public :
-    USQDCCut(float threshold, TChain * ch);
-    ~USQDCCut(){;}
-    bool passCut();
-  };
+    class USQDCCut : public snd::analysis_cuts::MuFilterBaseCut {
+    private :
+      float qdc_threshold;
+    public :
+      USQDCCut(float threshold, TChain * ch);
+      ~USQDCCut(){;}
+      bool passCut();
+    };
+
+  }
 }
