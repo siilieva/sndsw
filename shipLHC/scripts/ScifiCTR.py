@@ -11,14 +11,17 @@ def pyExit():
        os.system('kill '+str(os.getpid()))
 atexit.register(pyExit)
 
+# supress on-screen histogram drawing
+ROOT.gROOT.SetBatch(ROOT.kTRUE)
+
 A,B=ROOT.TVector3(),ROOT.TVector3()
 
 def FCN(npar, gin, f, par, iflag):
 #calculate chisquare
        chisq  = 0
        X = ROOT.gROOT.FindObjectAny('commonBlock')
-       for matH in range(3):
-            for matV in range(3):
+       for matH in range(nMats):
+            for matV in range(nMats):
                tdiff = X.GetBinContent(matH*10+matV)
                d = tdiff - (par[matH] - par[matV+3])
                chisq += d**2
@@ -29,8 +32,8 @@ def FCNS(npar, gin, f, par, iflag):
 #calculate chisquare
        chisq  = 0
        X = ROOT.gROOT.FindObjectAny('commonBlock')
-       for s1 in range(1,6): 
-          for s2 in range(s1+1,6): 
+       for s1 in range(1, nStations+1): 
+          for s2 in range(s1+1, nStations+1): 
              tdiff = X.GetBinContent(s1*10+s2)
              d = tdiff - (par[s2-1] - par[s1-1])
              chisq += d**2
@@ -52,11 +55,11 @@ class Scifi_CTR(ROOT.FairTask):
 
        self.tag = monitor.iteration
        tag = self.tag
-       for s in range(1,6):
+       for s in range(1, nStations+1):
                ut.bookHist(h,'CTR_Scifi'+str(s)+tag,'CTR '+str(s)+tag+'; dt [ns]; ',100,-5.,5.)
                ut.bookHist(h,'CTR_Scifi_beam'+str(s)+tag,'CTR beam'+str(s)+tag+'; dt [ns]; ',100,-5.,5.)
-               for matH in range(3):
-                   for matV in range(3):
+               for matH in range(nMats):
+                   for matV in range(nMats):
                     ut.bookHist(h,'CTR_Scifi'+str(s*100+10*matH+matV)+tag,'CTR '+str(s)+tag+'; dt [ns]; ',100,-5.,5.)
                     ut.bookHist(h,'CTR_Scifi_beam'+str(s*100+10*matH+matV)+tag,'CTR beam'+str(s)+tag+'; dt [ns]; ',100,-5.,5.)
 
@@ -65,22 +68,24 @@ class Scifi_CTR(ROOT.FairTask):
                     ut.bookHist(h,'resX'+str(s)+self.projs[p],'d;  [cm]; ',100,-1.,1.)
                     ut.bookHist(h,'extrap'+str(s)+self.projs[p],'SiPM distance; L [cm]; ',100,0.,50.)
 
-       for s1 in range(1,5):
-           for s2 in range(s1+1,6):
+       for s1 in range(1, nStations):
+           for s2 in range(s1+1, nStations+1):
               ut.bookHist(h,'CTR_ScifiStation'+str(s1*10+s2)+tag,'CTR station'+str(s1*10+s2)+'; dt [ns]; ',100,-5.,5.)
               ut.bookHist(h,'CTR_ScifiStation_beam'+str(s1*10+s2)+tag,'CTR station beam'+str(s1*10+s2)+'; dt [ns]; ',100,-5.,5.)
 
        if self.tag == "v0":
            self.tdcScifiStationCalib = {}
-           for s in range(1,6):
+           for s in range(1, nStations+1):
+              if nMats == 1 :
+                self.tdcScifiStationCalib[s] = [0,{'H':{0:0},'V':{0:0}}]
+              if nMats == 3:
                 self.tdcScifiStationCalib[s] = [0,{'H':{0:0,1:0,2:0},'V':{0:0,1:0,2:0}}]
 
        else:
             with open('ScifiTimeAlignment_'+self.tag, 'rb') as fh:
                self.tdcScifiStationCalib = pickle.load(fh)
 
-       self.V = 15 * u.cm/u.ns
-       self.C = 299792458 * u.m/u.s
+       self.V =  M.Scifi.GetConfParF("Scifi/signalSpeed")
 
    def ExecuteEvent(self,event):
        h = self.M.h
@@ -100,7 +105,7 @@ class Scifi_CTR(ROOT.FairTask):
           sortedClusters={}
 #
           pos = {}
-          for s in range(1,6):  sortedClusters[s] = {'H':[],'V':[]}
+          for s in range(1, nStations+1):  sortedClusters[s] = {'H':[],'V':[]}
           for nM in range(aTrack.getNumPointsWithMeasurement()):
               state = aTrack.getFittedState(nM)
               Meas = aTrack.getPointWithMeasurement(nM)
@@ -120,7 +125,7 @@ class Scifi_CTR(ROOT.FairTask):
                         sortedClusters[s]['H'].append( [clkey,L,A[1],state.getPos()[0],mat,(A[2]+B[2])/2.] )
                         rc = h['res'+str(s)+'H'].Fill( (A[1]+B[1])/2.-state.getPos()[1])
           # find station with exactly 1 x and 1 y cluster:
-          for s in range(1,6):
+          for s in range(1, nStations+1):
               if not (len(sortedClusters[s]['V']) * len(sortedClusters[s]['H']) ) ==1: continue
               timeCorr = {}
               for proj in ['V','H']:
@@ -149,7 +154,7 @@ class Scifi_CTR(ROOT.FairTask):
 #
               if tag!='v0':
                  stationTimes = {}
-                 for s in range(1,6):
+                 for s in range(1, nStations+1):
                    if not (len(sortedClusters[s]['V']) * len(sortedClusters[s]['H']) ) ==1: continue
                    sTime = 0
                    for proj in ['V','H']:
@@ -164,16 +169,16 @@ class Scifi_CTR(ROOT.FairTask):
                       time-=  abs(L)/self.V
                       sTime += time
                    stationTimes[s] = [sTime/2.,(sortedClusters[s]['H'][0][5] + sortedClusters[s]['V'][0][5])/2.]
-                 for s1 in range(1,5):
+                 for s1 in range(1, nStations):
                      if not s1 in stationTimes: continue
-                     for s2 in range(s1+1,6):
+                     for s2 in range(s1+1, nStations+1):
                          if not s2 in stationTimes: continue
                          dT = stationTimes[s2][0] - stationTimes[s1][0]
 # correct for slope
                          dZ = stationTimes[s2][1] - stationTimes[s1][1]
                          dL = dZ * ROOT.TMath.Sqrt( slopeX**2+slopeY**2+1 )
                          if slopeY>0.1:  dL = -dL     # cosmics from the back
-                         dT -= dL / self.C
+                         dT -= dL / u.speedOfLight
                          rc = h['CTR_ScifiStation'+str(s1*10+s2)+tag].Fill(dT)
                          if abs(slopeX)<0.1 and abs(slopeY)<0.1:
                                rc = h['CTR_ScifiStation_beam'+str(s1*10+s2)+tag].Fill(dT)
@@ -183,7 +188,7 @@ class Scifi_CTR(ROOT.FairTask):
       tag =  self.tag
       for b in ['','_beam']:
          ut.bookCanvas(h,'CTR'+b+tag,'CTR'+tag,1800,1200,3,2)
-         for s in range(1,6): 
+         for s in range(1, nStations+1): 
              tc =  h['CTR'+b+tag].cd(s)
              histo = h['CTR_Scifi'+b+str(s)+tag]
              rc = histo.Fit('gaus','SQ')
@@ -196,11 +201,11 @@ class Scifi_CTR(ROOT.FairTask):
              stats.SetY2NDC(0.94)
              histo.Draw()
 
-         for s in range(1,6):
+         for s in range(1, nStations+1):
              ut.bookCanvas(h,'CTRM'+str(s)+b+tag,'CTR per mat combi',1800,1200,3,3)
              j = 1
-             for matH in range(3):
-                for matV in range(3):
+             for matH in range(nMats):
+                for matV in range(nMats):
                      tc =  h['CTRM'+str(s)+b+tag].cd(j)
                      j+=1
                      histo = h['CTR_Scifi'+b+str(100*s+10*matH+matV)+tag]
@@ -218,8 +223,8 @@ class Scifi_CTR(ROOT.FairTask):
         for b in ['','_beam']:
            ut.bookCanvas(h,'CTRS'+b,'CTR per station combination'+tag,1800,1200,5,2)
            k=1
-           for s1 in range(1,5):
-              for s2 in range(s1+1,6):
+           for s1 in range(1, nStations):
+              for s2 in range(s1+1, nStations+1):
                   tc = h['CTRS'+b].cd(k)
                   k+=1
                   histo = h['CTR_ScifiStation'+b+str(s1*10+s2)+tag]
@@ -241,9 +246,9 @@ class Scifi_CTR(ROOT.FairTask):
       ut.bookHist(h,'cor')
       for b in ['','_beam']:
          self.meanAndSigma[b]={}
-         for s in range(1,6): 
-             for matH in range(3):
-                for matV in range(3):
+         for s in range(1, nStations+1): 
+             for matH in range(nMats):
+                for matV in range(nMats):
                      key = 100*s+10*matH+matV
                      histo = h['CTR_Scifi'+b+str(key)+tag]
                      Fun = histo.GetFunction('gaus')
@@ -254,9 +259,9 @@ class Scifi_CTR(ROOT.FairTask):
       self.ExtractMeanAndSigma()
       ut.bookHist(h,'commonBlock','',100,0.,100.)
 
-      for s in range(1,6):
-         for matH in range(3):
-            for matV in range(3):
+      for s in range(1, nStations+1):
+         for matH in range(nMats):
+            for matV in range(nMats):
                key = 100*s+10*matH+matV
                dt = self.meanAndSigma[b][key][0]
                h['commonBlock'].SetBinContent(matH*10+matV,dt)
@@ -270,7 +275,7 @@ class Scifi_CTR(ROOT.FairTask):
          err = 1E-3
          p = 0
          for proj in ['H','V']:
-           for m in range(3):
+           for m in range(nMats):
              name = "s"+str(s)+proj+str(m)
              gMinuit.mnparm(p, name, vstart[p], err, 0.,0.,ierflg)
              p+=1
@@ -284,7 +289,7 @@ class Scifi_CTR(ROOT.FairTask):
          ecor  = ctypes.c_double(0)
          p = 0
          for proj in ['H','V']:
-           for m in range(3):
+           for m in range(nMats):
              rc = gMinuit.GetParameter(p,cor,ecor)
              p+=1
              self.tdcScifiStationCalib[s][1][proj][m] = cor.value
@@ -297,14 +302,14 @@ class Scifi_CTR(ROOT.FairTask):
       tag = self.tag
       self.meanAndSigmaStation = {}
       self.meanAndSigmaStation[b]={}
-      for s1 in range(1,6): 
-           for s2 in range(s1+1,6): 
+      for s1 in range(1, nStations+1): 
+           for s2 in range(s1+1, nStations+1): 
                  key = s1*10+s2
                  histo = h[ 'CTR_ScifiStation'+b+str(key)+tag]
                  Fun = histo.GetFunction('gaus')
                  self.meanAndSigmaStation[b][key] = [Fun.GetParameter(1),Fun.GetParameter(2)]
-      for s1 in range(1,6):
-         for s2 in range(s1+1,6): 
+      for s1 in range(1, nStations+1):
+         for s2 in range(s1+1, nStations+1): 
             key = 10*s1+s2
             dt = self.meanAndSigmaStation[b][key][0]
             h['commonBlock'].SetBinContent(key,dt)
@@ -317,7 +322,7 @@ class Scifi_CTR(ROOT.FairTask):
          gMinuit.SetMaxIterations(10000)
          err = 1E-3
          p = 0
-         for s in range(1,6):
+         for s in range(1, nStations+1):
              name = "station"+str(s)
              gMinuit.mnparm(p, name, vstart[p], err, 0.,0.,ierflg)
              p+=1
@@ -329,7 +334,7 @@ class Scifi_CTR(ROOT.FairTask):
 
          cor    = ctypes.c_double(0)
          ecor  = ctypes.c_double(0)
-         for s in range(1,6):
+         for s in range(1, nStations+1):
              rc = gMinuit.GetParameter(s-1,cor,ecor)
              self.tdcScifiStationCalib[s][0] = cor.value
 
@@ -342,8 +347,7 @@ class Scifi_TimeOfTracks(ROOT.FairTask):
        self.M = monitor
        self.trackTask = self.M.FairTasks['simpleTracking']
        h = self.M.h
-       self.V = 15 * u.cm/u.ns
-       self.C = 299792458 * u.m/u.s
+       self.V = M.Scifi.GetConfParF("Scifi/signalSpeed")
        ut.bookHist(M.h,'dTvsZ','dT versus dL; dL/0.5cm [cm];dT/100ps [ns]',140,0.,70.,120,-6.,6.)
        ut.bookHist(M.h,'dTvsZ_beam','dT versus dL, beam dL/0.5cm [cm];dT/100ps [ns]',140,0.,70.,120,-6.,6.)
        with open('ScifiTimeAlignment_v2', 'rb') as fh:
@@ -365,7 +369,7 @@ class Scifi_TimeOfTracks(ROOT.FairTask):
             DetID2Key[event.Digi_ScifiHits[nHit].GetDetectorID()] = nHit
 #
           pos = {}
-          for s in range(1,6):  sortedClusters[s] = {'H':[],'V':[]}
+          for s in range(1, nStations+1):  sortedClusters[s] = {'H':[],'V':[]}
           for nM in range(aTrack.getNumPointsWithMeasurement()):
               state = aTrack.getFittedState(nM)
               Meas = aTrack.getPointWithMeasurement(nM)
@@ -384,7 +388,7 @@ class Scifi_TimeOfTracks(ROOT.FairTask):
                         L = A[0]-state.getPos()[0]
                         sortedClusters[s]['H'].append( [clkey,L,A[1],state.getPos()[0],mat,(A[2]+B[2])/2.] )
           stationTimes = {}
-          for s in range(1,6):
+          for s in range(1, nStations+1):
              if not (len(sortedClusters[s]['V']) * len(sortedClusters[s]['H']) ) ==1: continue
              sTime = 0
              for proj in ['V','H']:
@@ -414,7 +418,7 @@ class Scifi_TimeOfTracks(ROOT.FairTask):
              dT = stationTimes[s][0]-T0
              dL = dZ * ROOT.TMath.Sqrt( slopeX**2+slopeY**2+1 )
              # if slopeY>0.1:  dL = -dL     # cosmics from the back
-             # dT -= dL / self.C
+             # dT -= dL / u.speedOfLight
              rc = h['dTvsZ'].Fill(dL,dT)
              if abs(slopeX)<0.1 and abs(slopeY)<0.1:
                   rc = h['dTvsZ_beam'].Fill(dL,dT)
@@ -458,6 +462,9 @@ if __name__ == '__main__':
    trackTask.SetName('simpleTracking')
    FairTasks.append(trackTask)
    M = Monitor.Monitoring(options,FairTasks)
+   nMats = M.Scifi.GetConfParI("Scifi/nmats")
+   nStations = M.Scifi.GetConfParI("Scifi/nscifi")
+
    if options.nEvents <0: options.nEvents = M.GetEntries()
    if options.command == "full":
        task = Scifi_CTR()
@@ -487,12 +494,18 @@ if __name__ == '__main__':
        task.Plot()
        ut.writeHists(M.h,'ScifiTimeCalibration.root',plusCanvas=True)
 
-       for s in range(1,6):
+       for s in range(1, nStations+1):
           C = task.tdcScifiStationCalib[s]
-          print ("station %1i  %5.2F  H: %5.2F  %5.2F  %5.2F   V:  %5.2F  %5.2F  %5.2F "%( s, C[0],C[1]['H'][0], C[1]['H'][1], C[1]['H'][2],C[1]['V'][0], C[1]['V'][1], C[1]['V'][2] ) )
-       for s in range(1,6):
+          if nMats == 1 :
+            print ("station %1i  %5.2F  H: %5.2F   V:  %5.2F   "%( s, C[0],C[1]['H'][0],C[1]['V'][0] ) )
+          if nMats == 3 :
+            print ("station %1i  %5.2F  H: %5.2F  %5.2F  %5.2F   V:  %5.2F  %5.2F  %5.2F "%( s, C[0],C[1]['H'][0], C[1]['H'][1], C[1]['H'][2],C[1]['V'][0], C[1]['V'][1], C[1]['V'][2] ) )
+       for s in range(1, nStations+1):
           C = task.tdcScifiStationCalib[s]
-          print ("station %1i  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns,   %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns "%( s, C[0],C[1]['H'][0], C[1]['H'][1], C[1]['H'][2],C[1]['V'][0], C[1]['V'][1], C[1]['V'][2] ) )
+          if nMats == 1 :
+            print ("station %1i  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns "%( s, C[0],C[1]['H'][0],C[1]['V'][0] ) )
+          if nMats == 3 :
+            print ("station %1i  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns,   %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns "%( s, C[0],C[1]['H'][0], C[1]['H'][1], C[1]['H'][2],C[1]['V'][0], C[1]['V'][1], C[1]['V'][2] ) )
 
 if options.command == "full" or options.command == "check":
 # final test
@@ -502,10 +515,16 @@ if options.command == "full" or options.command == "check":
             event = M.GetEvent(n)
             taskT.ExecuteEvent(event)
        taskT.Plot()
-       for s in range(1,6):
+       for s in range(1, nStations+1):
           C = taskT.tdcScifiStationCalib[s]
-          print ("station %1i  %5.2F  H: %5.2F  %5.2F  %5.2F   V:  %5.2F  %5.2F  %5.2F "%( s, C[0],C[1]['H'][0], C[1]['H'][1], C[1]['H'][2],C[1]['V'][0], C[1]['V'][1], C[1]['V'][2] ) )
-       for s in range(1,6):
+          if nMats == 1 :
+            print ("station %1i  %5.2F  H: %5.2F   V:  %5.2F   "%( s, C[0],C[1]['H'][0],C[1]['V'][0] ) )
+          if nMats == 3 :
+            print ("station %1i  %5.2F  H: %5.2F  %5.2F  %5.2F   V:  %5.2F  %5.2F  %5.2F "%( s, C[0],C[1]['H'][0], C[1]['H'][1], C[1]['H'][2],C[1]['V'][0], C[1]['V'][1], C[1]['V'][2] ) )
+       for s in range(1, nStations+1):
           C = taskT.tdcScifiStationCalib[s]
-          print ("station %1i  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns,   %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns "%( s, C[0],C[1]['H'][0], C[1]['H'][1], C[1]['H'][2],C[1]['V'][0], C[1]['V'][1], C[1]['V'][2] ) )
+          if nMats == 1 :
+            print ("station %1i  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns "%( s, C[0],C[1]['H'][0],C[1]['V'][0] ) )
+          if nMats == 3 :
+            print ("station %1i  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns,   %5.3F*u.ns,  %5.3F*u.ns,  %5.3F*u.ns "%( s, C[0],C[1]['H'][0], C[1]['H'][1], C[1]['H'][2],C[1]['V'][0], C[1]['V'][1], C[1]['V'][2] ) )
 
