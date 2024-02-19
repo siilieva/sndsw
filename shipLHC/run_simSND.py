@@ -20,7 +20,7 @@ MCTracksWithHitsOrEnergyCut = False # or of above, factor 2 file size increase c
 parser = ArgumentParser()
 
 parser.add_argument("--H6",   dest="testbeam",   help="use geometry of H8/H6 testbeam setup", action="store_true")
-parser.add_argument("--HX",   dest="testbeam2023",   help="use geometry of 2023 testbeam setup", required=False, default = 0, type = int)
+parser.add_argument("--HX",   dest="testbeam2023",   help="use geometry of 2023 testbeam setup", action="store_true")
 parser.add_argument("--Genie",   dest="genie",   help="Genie for reading and processing neutrino interactions (1 standard, 2 FLUKA, 3 Pythia, 4 GENIE geometry driver)", required=False, default = 0, type = int)
 parser.add_argument("--Ntuple",  dest="ntuple",  help="Use ntuple as input", required=False, action="store_true")
 parser.add_argument("--MuonBack",dest="muonback",  help="Generate events from muon background file, --Cosmics=0 for cosmic generator data", required=False, action="store_true")
@@ -105,10 +105,15 @@ print("SND@LHC setup for",simEngine,"to produce",options.nEvents,"events")
 ROOT.gRandom.SetSeed(options.theSeed)  # this should be propagated via ROOT to Pythia8 and Geant4VMC
 shipRoot_conf.configure(0)     # load basic libraries, prepare atexit for python
 
-if options.testbeam:  snd_geo = ConfigRegistry.loadpy("$SNDSW_ROOT/geometry/sndLHC_H6geom_config.py")
-elif options.testbeam2023:  snd_geo = ConfigRegistry.loadpy("$SNDSW_ROOT/geometry/sndLHC_HXgeom_config.py")
-else:                         snd_geo = ConfigRegistry.loadpy("$SNDSW_ROOT/geometry/sndLHC_geom_config.py",
-                                                                  nuTargetPassive = options.nuTargetPassive, useNagoyaEmulsions = options.useNagoyaEmulsions)
+if options.testbeam:
+  snd_geo = ConfigRegistry.loadpy("$SNDSW_ROOT/geometry/sndLHC_H6geom_config.py")
+elif options.testbeam2023:
+  snd_geo = ConfigRegistry.loadpy("$SNDSW_ROOT/geometry/sndLHC_HXgeom_config.py",
+                                   tb_2023_mc = options.testbeam2023)
+else:
+  snd_geo = ConfigRegistry.loadpy("$SNDSW_ROOT/geometry/sndLHC_geom_config.py",
+                                   nuTargetPassive = options.nuTargetPassive,
+                                   useNagoyaEmulsions = options.useNagoyaEmulsions)
 
 if simEngine == "PG": tag = simEngine + "_"+str(options.pID)+"-"+mcEngine
 else: tag = simEngine+"-"+mcEngine
