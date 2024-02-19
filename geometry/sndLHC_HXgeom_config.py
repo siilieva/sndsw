@@ -2,6 +2,9 @@ import ROOT as r
 import shipunit as u
 from ShipGeoConfig import AttrDict, ConfigRegistry
 
+tb_2023_mc = False
+if "tb_2023_mc" in globals():
+    tb_2023_mc = True
 
 with ConfigRegistry.register_config("basic") as c:
 # cave parameters
@@ -130,31 +133,8 @@ with ConfigRegistry.register_config("basic") as c:
 # Local Scifi position of last channel (=first channel on technical drawing) on a horizontal scifi plane in software
         c.Scifi.LfirstChannelHX,c.Scifi.LfirstChannelHY,c.Scifi.LfirstChannelHZ = -195.0*u.mm, 195.178*u.mm,  6.25*u.mm  # sipm on the right side direction away from IP1
 
-# relative mat alignments
-        c.Scifi.LocM100,c.Scifi.LocM101,c.Scifi.LocM102 =      7.30*u.um,  219.99*u.um,  247.73*u.um
-        c.Scifi.LocM110,c.Scifi.LocM111,c.Scifi.LocM112 =   -103.87*u.um, -105.64*u.um,    2.54*u.um
-        c.Scifi.LocM200,c.Scifi.LocM201,c.Scifi.LocM202 =   -286.76*u.um,  -53.99*u.um,  -85.45*u.um
-        c.Scifi.LocM210,c.Scifi.LocM211,c.Scifi.LocM212 =    103.99*u.um,  113.92*u.um,  148.52*u.um
-        c.Scifi.LocM300,c.Scifi.LocM301,c.Scifi.LocM302 =     -1.85*u.um,   78.98*u.um,   13.98*u.um
-        c.Scifi.LocM310,c.Scifi.LocM311,c.Scifi.LocM312 =      0.76*u.um, -109.75*u.um,   74.54*u.um
-        c.Scifi.LocM400,c.Scifi.LocM401,c.Scifi.LocM402 =    -16.79*u.um,   56.44*u.um,   96.94*u.um
-        c.Scifi.LocM410,c.Scifi.LocM411,c.Scifi.LocM412 =     71.04*u.um,  -64.13*u.um,   17.25*u.um
-        c.Scifi.LocM500,c.Scifi.LocM501,c.Scifi.LocM502 =     76.32*u.um,   51.34*u.um,  -13.33*u.um
-        c.Scifi.LocM510,c.Scifi.LocM511,c.Scifi.LocM512 =    -78.20*u.um,  158.73*u.um,   39.76*u.um
-# station rotations
-        c.Scifi.RotPhiS1,c.Scifi.RotPsiS1,c.Scifi.RotThetaS1 =     0.00*u.mrad,   -1.00*u.mrad,    0.00*u.mrad
-        c.Scifi.RotPhiS2,c.Scifi.RotPsiS2,c.Scifi.RotThetaS2 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
-        c.Scifi.RotPhiS3,c.Scifi.RotPsiS3,c.Scifi.RotThetaS3 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
-        c.Scifi.RotPhiS4,c.Scifi.RotPsiS4,c.Scifi.RotThetaS4 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
-        c.Scifi.RotPhiS5,c.Scifi.RotPsiS5,c.Scifi.RotThetaS5 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
-
 # Time alignment Scifi, T0 = station 0,  mat 0 
         c.Scifi.signalSpeed = 15 * u.cm/u.ns
-        c.Scifi.station1t,c.Scifi.station1H0t,c.Scifi.station1H1t,c.Scifi.station1H2t,c.Scifi.station1V0t,c.Scifi.station1V1t,c.Scifi.station1V2t  =  0.000*u.ns,  0.000*u.ns,  -0.222*u.ns,  -0.509*u.ns,   -0.517*u.ns,  -1.156*u.ns,  -0.771*u.ns
-        c.Scifi.station2t,c.Scifi.station2H0t,c.Scifi.station2H1t,c.Scifi.station2H2t,c.Scifi.station2V0t,c.Scifi.station2V1t,c.Scifi.station2V2t  =  -0.287*u.ns,  0.000*u.ns,  0.250*u.ns,  -0.854*u.ns,   -1.455*u.ns,  -0.812*u.ns,  -1.307*u.ns
-        c.Scifi.station3t,c.Scifi.station3H0t,c.Scifi.station3H1t,c.Scifi.station3H2t,c.Scifi.station3V0t,c.Scifi.station3V1t,c.Scifi.station3V2t  =   -0.861*u.ns,  0.000*u.ns,  -0.307*u.ns,  0.289*u.ns,   0.069*u.ns,  -0.895*u.ns,  0.731*u.ns
-        c.Scifi.station4t,c.Scifi.station4H0t,c.Scifi.station4H1t,c.Scifi.station4H2t,c.Scifi.station4V0t,c.Scifi.station4V1t,c.Scifi.station4V2t  =  0.164*u.ns,  0.000*u.ns,  -1.451*u.ns,  0.196*u.ns,   -2.025*u.ns,  -1.049*u.ns,  -0.938*u.ns
-        c.Scifi.station5t,c.Scifi.station5H0t,c.Scifi.station5H1t,c.Scifi.station5H2t,c.Scifi.station5V0t,c.Scifi.station5V1t,c.Scifi.station5V2t  =   0.337*u.ns,  0.000*u.ns,  -1.157*u.ns,  -1.060*u.ns,   -0.627*u.ns,  -2.405*u.ns,  0.071*u.ns
 
         c.MuFilter = AttrDict(z=0*u.cm)
         #coordinates in local gravity based system
@@ -332,25 +312,8 @@ with ConfigRegistry.register_config("basic") as c:
            c.Scifi.fiber_length = c.Scifi.scifimat_length
            c.Scifi.plastbar_y = c.Scifi.ydim
 
-           # to be seen if needed to touch these two
-           #c.Scifi.scifi_separation = 10*u.cm
-           #c.Scifi.offset_z = - c.EmulsionDet.zdim/2 + c.EmulsionDet.BrZ  #SciFi starts at the end of the first ECC
-
-           # to be checked how to center the detector
-           # Scifi technical drawing, distance from first channel on vertical / horizontal plane to edge point  225,225,0, xy plane z perpendicularc.Scifi.ydim
-           #c.Scifi.EdgeAX, c.Scifi.EdgeAY, c.Scifi.EdgeAZ =  255*u.mm, 255*u.mm, 0*u.mm
-
-           #c.Scifi.FirstChannelVX,c.Scifi.FirstChannelVY,c.Scifi.FirstChannelVZ = -195.28*u.mm, -200.0*u.mm, -12.92*u.mm
-
-           #c.Scifi.FirstChannelHX,c.Scifi.FirstChannelHY,c.Scifi.FirstChannelHZ = -200.0*u.mm, -195.28*u.mm, -7.07*u.mm
-
-# Local Scifi position of first channel on a vertical scifi plane in software
-           #c.Scifi.LfirstChannelVX,c.Scifi.LfirstChannelVY,c.Scifi.LfirstChannelVZ = -195.135*u.mm, 195.0*u.mm, 11.85*u.mm   # sipm on top
-
-# Local Scifi position of last channel (=first channel on technical drawing) on a horizontal scifi plane in software
-           #c.Scifi.LfirstChannelHX,c.Scifi.LfirstChannelHY,c.Scifi.LfirstChannelHZ = -195.0*u.mm, 195.178*u.mm,  6.25*u.mm  # sipm on the right side direction away from IP1
-
-           # add 3 variable size iron blocks upstream of SciFi stations         
+           # add 3 variable size iron blocks upstream of SciFi stations
+           # complete removal of a wall goes with commenting the respective line below
            c.Scifi.FeTargetX2, c.Scifi.FeTargetY2, c.Scifi.FeTargetZ2  = 30.*u.cm, 10.*u.cm, 30.*u.cm
            c.Scifi.FeTargetX3, c.Scifi.FeTargetY3, c.Scifi.FeTargetZ3  = 30.*u.cm, 10.*u.cm, 30.*u.cm
            c.Scifi.FeTargetX4, c.Scifi.FeTargetY4, c.Scifi.FeTargetZ4  = 30.*u.cm, 10.*u.cm, 30.*u.cm
@@ -389,12 +352,43 @@ with ConfigRegistry.register_config("basic") as c:
            #c.MuFilter.Muon5Dz = 127.7*u.mm + 0.25*u.cm
            #c.MuFilter.Muon7Dz = 127.7*u.mm + 0.25*u.cm
            #c.MuFilter.Muon8Dz = 127.7*u.mm + 0.56*u.cm
-# from track alignment
-           c.Scifi.Zpos0+=  0.00  *u.um
-           c.Scifi.Xpos0+=  0  *u.um
-           c.Scifi.Zpos1+=  0.00  *u.um
-           c.Scifi.Xpos1+=  0.00  *u.um
-           c.Scifi.Zpos2+=  0.00  *u.um
-           c.Scifi.Xpos2+=  0.0  *u.um
-           c.Scifi.Zpos3+=  0  *u.um
-           c.Scifi.Xpos3+=  0  *u.um
+
+# from Scifi track alignment
+           if tb_2023_mc :
+# spatial
+             c.Scifi.LocM100, c.Scifi.LocM110 = 0.000*u.um, 0.000*u.um
+             c.Scifi.LocM200, c.Scifi.LocM210 = 0.000*u.um, 0.000*u.um
+             c.Scifi.LocM300, c.Scifi.LocM310 = 0.000*u.um, 0.000*u.um
+             c.Scifi.LocM400, c.Scifi.LocM410 = 0.000*u.um, 0.000*u.um
+             c.Scifi.RotPhiS10,c.Scifi.RotPsiS10,c.Scifi.RotThetaS10 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS11,c.Scifi.RotPsiS11,c.Scifi.RotThetaS11 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS20,c.Scifi.RotPsiS20,c.Scifi.RotThetaS20 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS21,c.Scifi.RotPsiS21,c.Scifi.RotThetaS21 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS30,c.Scifi.RotPsiS30,c.Scifi.RotThetaS30 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS31,c.Scifi.RotPsiS31,c.Scifi.RotThetaS31 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS40,c.Scifi.RotPsiS40,c.Scifi.RotThetaS40 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS41,c.Scifi.RotPsiS41,c.Scifi.RotThetaS41 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
+# Time alignment Scifi, T0 = station 0,  mat 0 
+             c.Scifi.station1t,c.Scifi.station1H0t,c.Scifi.station1V0t  =  0.000*u.ns,  0.000*u.ns,  0.000*u.ns
+             c.Scifi.station2t,c.Scifi.station2H0t,c.Scifi.station2V0t  =  0.000*u.ns,  0.000*u.ns,  0.000*u.ns
+             c.Scifi.station3t,c.Scifi.station3H0t,c.Scifi.station3V0t  =  0.000*u.ns,  0.000*u.ns,  0.000*u.ns
+             c.Scifi.station4t,c.Scifi.station4H0t,c.Scifi.station4V0t  =  0.000*u.ns,  0.000*u.ns,  0.000*u.ns
+           else :
+# spatial
+             c.Scifi.LocM100, c.Scifi.LocM110 = 667.33*u.um, 429.73*u.um
+             c.Scifi.LocM200, c.Scifi.LocM210 = 0.000*u.um, 51.80*u.um
+             c.Scifi.LocM300, c.Scifi.LocM310 = 32.36*u.um, 803.10*u.um
+             c.Scifi.LocM400, c.Scifi.LocM410 = 105.10*u.um, 371.07*u.um
+             c.Scifi.RotPhiS10,c.Scifi.RotPsiS10,c.Scifi.RotThetaS10 =     0.00*u.mrad,    3.29*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS11,c.Scifi.RotPsiS11,c.Scifi.RotThetaS11 =     0.00*u.mrad,   -0.89*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS20,c.Scifi.RotPsiS20,c.Scifi.RotThetaS20 =     0.00*u.mrad,    0.00*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS21,c.Scifi.RotPsiS21,c.Scifi.RotThetaS21 =     0.00*u.mrad,    0.25*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS30,c.Scifi.RotPsiS30,c.Scifi.RotThetaS30 =     0.00*u.mrad,    0.93*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS31,c.Scifi.RotPsiS31,c.Scifi.RotThetaS31 =     0.00*u.mrad,    2.86*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS40,c.Scifi.RotPsiS40,c.Scifi.RotThetaS40 =     0.00*u.mrad,    0.15*u.mrad,    0.00*u.mrad
+             c.Scifi.RotPhiS41,c.Scifi.RotPsiS41,c.Scifi.RotThetaS41 =     0.00*u.mrad,    3.13*u.mrad,    0.00*u.mrad
+# Time alignment Scifi, T0 = station 0,  mat 0 
+             c.Scifi.station1t,c.Scifi.station1H0t,c.Scifi.station1V0t  =  0.000*u.ns,  0.000*u.ns,  0.000*u.ns
+             c.Scifi.station2t,c.Scifi.station2H0t,c.Scifi.station2V0t  =  0.338*u.ns,  0.000*u.ns,  0.000*u.ns
+             c.Scifi.station3t,c.Scifi.station3H0t,c.Scifi.station3V0t  =  2.015*u.ns,  0.000*u.ns,  0.000*u.ns
+             c.Scifi.station4t,c.Scifi.station4H0t,c.Scifi.station4V0t  =  0.908*u.ns,  0.000*u.ns,  0.000*u.ns
