@@ -9,8 +9,12 @@ from rootpyPickler import Unpickler
 import time
 from XRootD import client
 
+import numpy as np
+
 from datetime import datetime
 from pathlib import Path
+
+ROOT.gStyle.SetPalette(ROOT.kViridis)
 
 def pyExit():
        "unfortunately need as bypassing an issue related to use xrootd"
@@ -224,7 +228,7 @@ def bunchXtype():
              if not b1 and not b2: xing['noBeam'] = True
         return xing
 
-def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-1,nTracks=0,minSipmMult=1,withTiming=False, option=None,Setup='',verbose=0,auto=False):
+def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-1,nTracks=0,minSipmMult=1,withTiming=False, option=None,Setup='',verbose=0,auto=False, hitColour = None):
  if 'simpleDisplay' not in h: ut.bookCanvas(h,key='simpleDisplay',title='simple event display',nx=1200,ny=1600,cx=1,cy=2)
  h['simpleDisplay'].cd(1)
  zStart = 250. # TI18 coordinate system
@@ -329,6 +333,10 @@ def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-
     if empty: continue
     h['hitCollectionX']= {'Scifi':[0,ROOT.TGraphErrors()],'DS':[0,ROOT.TGraphErrors()]}
     h['hitCollectionY']= {'Veto':[0,ROOT.TGraphErrors()],'Scifi':[0,ROOT.TGraphErrors()],'US':[0,ROOT.TGraphErrors()],'DS':[0,ROOT.TGraphErrors()]}
+    if hitColour is not None :
+           h['hitColourX'] = {'Scifi': [], 'DS' : []}
+           h['hitColourY'] = {'Veto': [], 'Scifi' : [], 'US' : [], 'DS' : []}
+
     h['firedChannelsX']= {'Scifi':[0,0,0],'DS':[0,0,0]}
     h['firedChannelsY']= {'Veto':[0,0,0,0],'Scifi':[0,0,0],'US':[0,0,0,0],'DS':[0,0,0,0]}
     systems = {1:'Veto',2:'US',3:'DS',0:'Scifi'}
@@ -337,12 +345,14 @@ def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-
           rc=h[collection][c][1].SetName(c)
           rc=h[collection][c][1].Set(0)
 
-    #Do we still use these lines? Seems no. 
-    #And for events having all negative QDCs minT[1] is returned empty and the display crashes.
-    #dTs = "%5.2Fns"%(dT/freq*1E9)
+    if hitColour is not None :
+           h["markerCollection"] = []
+
+    dTs = "%5.2Fns"%(dT/freq*1E9)
     # find detector which triggered
-    #minT = firstTimeStamp(event)
-    #dTs+= "    " + str(minT[1].GetDetectorID())
+    minT = firstTimeStamp(event)
+    if minT[0] < 1000000000:
+        dTs+= "    " + str(minT[1].GetDetectorID())
     for p in proj:
        rc = h[ 'simpleDisplay'].cd(p)
        h[proj[p]].Draw('b')
@@ -385,8 +395,20 @@ def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-
              rc = c[1].SetPoint(c[0], Z, Y)
              rc = c[1].SetPointError(c[0], detSize[system][2], sY)
              c[0] += 1
-
-         fillNode(curPath)
+         if hitColour == "q" :
+                max_QDC = 200 * 16
+                this_qdc = 0
+                ns = max(1,digi.GetnSides())
+                for side in range(ns):
+                       for m in  range(digi.GetnSiPMs()):
+                              qdc = digi.GetSignal(m+side*digi.GetnSiPMs())
+                              if not qdc < 0  :
+                                     this_qdc += qdc
+                if this_qdc > max_QDC :
+                       this_qdc = max_QDC
+                fillNode(curPath, ROOT.TColor.GetPalette()[int(this_qdc/max_QDC*(len(ROOT.TColor.GetPalette())-1))])
+         else :
+                fillNode(curPath)
 
          if digi.isVertical():  F = 'firedChannelsX'
          else:                     F = 'firedChannelsY'
@@ -401,8 +423,62 @@ def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-
                        h[F][systems[system]][2+side]+=qdc
     h['hitCollectionY']['Scifi'][1].SetMarkerColor(ROOT.kBlue+2)
     h['hitCollectionX']['Scifi'][1].SetMarkerColor(ROOT.kBlue+2)
+
+    if hitColour == "q" :
+       # Get SciFi hit density
+       max_scifi_density = 40 # Number of SiPM channels in 1 cm.
+       for orientation in ['X', 'Y'] :
+          for i in range(h['hitCollection'+orientation]['Scifi'][1].GetN()) :
+             x_i = h['hitCollection'+orientation]['Scifi'][1].GetPointX(i)
+             y_i = h['hitCollection'+orientation]['Scifi'][1].GetPointY(i)
+             density = 0
+             for j in range(h['hitCollection'+orientation]['Scifi'][1].GetN()) :
+                x_j = h['hitCollection'+orientation]['Scifi'][1].GetPointX(j)
+                y_j = h['hitCollection'+orientation]['Scifi'][1].GetPointY(j)
+                if ((x_i - x_j)**2 + (y_i - y_j)**2) <= 0.5**2 :
+                   density += 1
+             h['hitColour'+orientation]['Scifi'].append(density)
+       for orientation in ['X', 'Y'] :
+          for i in range(h['hitCollection'+orientation]['Scifi'][1].GetN()) :
+                 if h['hitColour'+orientation]['Scifi'][i] > max_scifi_density :
+                        h['hitColour'+orientation]['Scifi'][i] = max_scifi_density
+                 h['hitColour'+orientation]['Scifi'][i] = ROOT.TColor.GetPalette()[int(float(h['hitColour'+orientation]['Scifi'][i])/max_scifi_density*(len(ROOT.TColor.GetPalette())-1))]
+
+       # Draw colour legend, by hand...
+       h['simpleDisplay'].cd(1)
+       n_scifi_legend_points = 5
+       min_x_leg = 360
+       max_x_leg = 440
+       y_leg = -85
+       padLegScifi = ROOT.TPad("legScifi","legScifi",0.4,0.15,0.4+0.25, 0.15+0.25)
+       padLegScifi.SetFillStyle(4000)
+       padLegScifi.Draw()
+       padLegScifi.cd()
+       text_scifi_legend = ROOT.TLatex()
+       text_scifi_legend.SetTextAlign(11)
+       text_scifi_legend.SetTextFont(42)
+       text_scifi_legend.SetTextSize(.15)
+       for i in range(n_scifi_legend_points) :
+              if i < (n_scifi_legend_points - 1) :
+                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_scifi_legend_points+2)), 0.2, "{:d}".format(int(i*max_scifi_density/(n_scifi_legend_points-1))))
+                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_scifi_legend_points+2)), 0.,  "{:.0f}".format(int(i*max_QDC/(n_scifi_legend_points-1))))
+              else :
+                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_scifi_legend_points+2)), 0.2, "{:d} SciFi hits/cm".format(int(i*max_scifi_density/(n_scifi_legend_points-1))))
+                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_scifi_legend_points+2)), 0.,  "{:.0f} QDC units".format(int(i*max_QDC/(n_scifi_legend_points-1))))
+
+              h["markerCollection"].append(ROOT.TEllipse((i+0.15)*(1./(n_scifi_legend_points+2)), 0.26, 0.05/4, 0.05))
+              h["markerCollection"][-1].SetFillColor(ROOT.TColor.GetPalette()[int(float(i*max_scifi_density/(n_scifi_legend_points-1))/max_scifi_density*(len(ROOT.TColor.GetPalette())-1))])
+              h["markerCollection"][-1].Draw("SAME")
+
+              h["markerCollection"].append(ROOT.TBox((i+0.15)*(1./(n_scifi_legend_points+2))-0.05/4 , 0.06 - 0.05, (i+0.15)*(1./(n_scifi_legend_points+2))+0.05/4, 0.06 + 0.05))
+              h["markerCollection"][-1].SetFillColor(ROOT.TColor.GetPalette()[int(float(i*max_QDC/(n_scifi_legend_points-1))/max_QDC*(len(ROOT.TColor.GetPalette())-1))])
+              h["markerCollection"][-1].Draw("SAME")
+                                          
+                         
     k = 1
     moreEventInfo = []
+
+
     for collection in ['hitCollectionX','hitCollectionY']:
        h['simpleDisplay'].cd(k)
        drawInfo(h['simpleDisplay'], k, runId, N, T)
@@ -418,10 +494,27 @@ def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-
           print(atext)
           if h[collection][c][1].GetN()<1: continue
           if c=='Scifi':
-            h[collection][c][1].SetMarkerStyle(20)
-            h[collection][c][1].SetMarkerSize(1.5)
-            rc=h[collection][c][1].Draw('sameP')
-            h['display:'+c]=h[collection][c][1]
+              if hitColour not in ["q"] :
+                     h[collection][c][1].SetMarkerStyle(20)
+                     h[collection][c][1].SetMarkerSize(1.5)
+                     rc=h[collection][c][1].Draw('sameP')
+                     h['display:'+c]=h[collection][c][1]
+              elif hitColour == "q" :
+                     n = h[collection][c][1].GetN()
+
+                     # Draw highest density points last
+                     sorted_indices = np.argsort(h['hitColour'+collection[-1]]['Scifi'])
+                     for i_unsorted in range(0, n) :
+                            i = int(sorted_indices[i_unsorted])
+                            
+                            x = h[collection][c][1].GetPointX(i)
+                            y = h[collection][c][1].GetPointY(i)
+                            
+                            h["markerCollection"].append( ROOT.TEllipse(x, y, 1.5, 1.5))
+                            h["markerCollection"][-1].SetLineWidth(0)
+                            h["markerCollection"][-1].SetFillColor(h['hitColour'+collection[-1]]['Scifi'][i])
+                            h["markerCollection"][-1].Draw("SAME")
+                               
     T0 = eventTree.EventHeader.GetEventTime()
     if type(start) == type(1): rc = event.GetEvent(N-1)
     else: rc = event.GetEvent(start[N]-1)
@@ -625,14 +718,12 @@ def drawDetectors():
       nodes['volTarget_1/volWallborder_{}'.format(i)]=ROOT.kGray
       nodes['volMuFilter_1/subUSBox_{}'.format(i+2)]=ROOT.kGray+1
       nodes['volMuFilter_1/volMuUpstreamDet_{}_{}'.format(i, i+2)]=ROOT.kBlue+1
-      # iron blocks btw SciFi planes in the testbeam 2023 det layout
-      nodes['volTarget_1/volFeTarget{}_1'.format(i+1)]=ROOT.kGreen-6
       for j in range(10):
          nodes['volMuFilter_1/volMuUpstreamDet_{}_{}/volMuUpstreamBar_2{}00{}'.format(i, i+2, i, j)]=ROOT.kBlue+1
       nodes['volMuFilter_1/volFeBlock_{}'.format(i)]=ROOT.kGreen-6
    for i in range(7,10):
       nodes['volMuFilter_1/volFeBlock_{}'.format(i)]=ROOT.kGreen-6
-   passNodes = {'Block', 'Wall', 'FeTarget'}
+   passNodes = {'Block', 'Wall'}
    xNodes = {'UpstreamBar', 'VetoBar', 'hor'}
    proj = {'X':0,'Y':1}
    for node_ in nodes:
@@ -645,8 +736,6 @@ def drawDetectors():
             X.Draw('f&&same')
             X.Draw('same')
          else:
-            # check if node exists
-            if not nav.CheckPath(node): continue
             nav.cd(node)
             N = nav.GetCurrentNode()
             S = N.GetVolume().GetShape()
@@ -931,16 +1020,24 @@ def dumpChannels(D='Digi_MuFilterHits'):
      keys.sort()
      for k in keys: print(text[k])
 
-def fillNode(node):
+def fillNode(node, color = None):
    xNodes = {'UpstreamBar', 'VetoBar', 'hor'}
    proj = {'X':0,'Y':1}
-   color = ROOT.kBlack
+   if color == None :
+          hcal_color = ROOT.kBlack
+          veto_color = ROOT.kRed+1
+   else :
+          hcal_color = color
+          veto_color = color
    thick = 5
    for p in proj:
       if node+p in h:
          X = h[node+p]
          if 'Veto' in node:
-            color = ROOT.kRed+1
+              color = veto_color
+         else :
+              color = hcal_color
+       
          if 'Downstream' in node:
             thick = 5
          c = proj[p]
