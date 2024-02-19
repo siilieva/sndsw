@@ -551,6 +551,8 @@ Float_t MuFilter::GetCorrectedTime(Int_t fDetectorID, Int_t channel, Double_t ra
 		     tag = "A";
 		     if (fRunNumber>5116 && !(fRunNumber<5193 && fRunNumber>5174) ) {tag = "B";}		 
 		}
+		// 2023 testbeam data doesn't have a custom tag
+		if (fRunNumber>=1e5) {tag = "";}
 	}
 	Float_t cor = rawTime;
 	int l = (fDetectorID-30000)/1000;
