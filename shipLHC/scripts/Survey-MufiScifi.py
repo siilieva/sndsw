@@ -7,6 +7,9 @@ import ctypes
 import pickle
 from array import array
 
+# supress on-screen histogram drawing
+ROOT.gROOT.SetBatch(ROOT.kTRUE)
+
 # for fixing a root bug,  will be solved in the forthcoming 6.26 release.
 ROOT.gInterpreter.Declare("""
 #include "MuFilterHit.h"
@@ -130,20 +133,30 @@ MuFilter = geo.modules['MuFilter']
 Scifi       = geo.modules['Scifi']
 nav = ROOT.gGeoManager.GetCurrentNavigator()
 
+nScifi = Scifi.GetConfParI("Scifi/nscifi")
+nMats = Scifi.GetConfParI("Scifi/nmats")
+
 A,B,locA,locB,globA,globB    = ROOT.TVector3(),ROOT.TVector3(),ROOT.TVector3(),ROOT.TVector3(),ROOT.TVector3(),ROOT.TVector3()
 latex = ROOT.TLatex()
 
 
 # MuFilter mapping of planes and bars 
-systemAndPlanes  = {1:2,2:5,3:7}
-systemAndBars     = {1:7,2:10,3:60}
+systemAndPlanes   = {1:MuFilter.GetConfParI("MuFilter/NVetoPlanes"),
+                     2:MuFilter.GetConfParI("MuFilter/NUpstreamPlanes"),
+                     3:MuFilter.GetConfParI("MuFilter/NDownstreamPlanes")}
+systemAndBars     = {1:MuFilter.GetConfParI("MuFilter/NVetoBars"),
+                     2:MuFilter.GetConfParI("MuFilter/NUpstreamBars"),
+                     3:MuFilter.GetConfParI("MuFilter/NDownstreamBars")}
+
 def systemAndOrientation(s,plane):
    if s==1 or s==2: return "horizontal"
    if plane%2==1 or plane == 6: return "vertical"
    return "horizontal"
 
-systemAndChannels     = {1:[8,0],2:[6,2],3:[1,0]}
-sdict                     = {1:'Veto',2:'US',3:'DS'}
+systemAndChannels     = {1:[MuFilter.GetConfParI("MuFilter/VetonSiPMs"),0],
+                         2:[MuFilter.GetConfParI("MuFilter/UpstreamnSiPMs")-2,2],
+                         3:[MuFilter.GetConfParI("MuFilter/DownstreamnSiPMs"),0]}
+sdict                 = {1:'Veto',2:'US',3:'DS'}
 
 freq      = 160.316E6
 TDC2ns = 1E9/freq
@@ -164,8 +177,8 @@ def getAverageZpositions():
              p = plane//2
           MuFilter.GetPosition(s*10000+p*1000+bar,A,B)
           zPos['MuFilter'][s*10+plane] = (A.Z()+B.Z())/2.
-   for s in range(1,6):
-      mat   = 2
+   for s in range(1,nScifi+1):
+      mat  = 1
       sipm = 1
       channel = 64
       for o in range(2):
@@ -388,16 +401,19 @@ def help():
     print("             Scifi_slopes(Nev=-1)")
 
 def Scifi_hitMaps(Nev=options.nEvents):
- scifi = geo.modules['Scifi']
+ Scifi = geo.modules['Scifi']
+ nScifi = Scifi.GetConfParI("Scifi/nscifi")
+ nMats =  Scifi.GetConfParI("Scifi/nmats")
+ nMats = Scifi.GetConfParI("Scifi/nmats")
  A=ROOT.TVector3()
  B=ROOT.TVector3()
  
- for s in range(10):
+ for s in range(nScifi*2):
     ut.bookHist(h,'posX_'+str(s),'x',2000,-100.,100.)
     ut.bookHist(h,'posY_'+str(s),'y',2000,-100.,100.)
     if s%2==1: ut.bookHist(h,'mult_'+str(s),'mult vertical station '+str(s//2+1),100,-0.5,99.5)
     else: ut.bookHist(h,'mult_'+str(s),'mult horizontal station '+str(s//2+1),100,-0.5,99.5)
- for mat in range(30):
+ for mat in range(nScifi*nMats*2):
     ut.bookHist(h,'mat_'+str(mat),'hit map / mat',512,-0.5,511.5)
     ut.bookHist(h,'sig_'+str(mat),'signal / mat',200,-50.0,150.)
     ut.bookHist(h,'tdc_'+str(mat),'tdc / mat',200,-1.,4.)
@@ -414,7 +430,7 @@ def Scifi_hitMaps(Nev=options.nEvents):
         rc = h['mat_'+str(X[0]*3+X[1])].Fill(X[2])
         rc  = h['sig_'+str(X[0]*3+X[1])].Fill(aHit.GetSignal(0))
         rc  = h['tdc_'+str(X[0]*3+X[1])].Fill(aHit.GetTime(0))
-        scifi.GetSiPMPosition(aHit.GetDetectorID(),A,B)
+        Scifi.GetSiPMPosition(aHit.GetDetectorID(),A,B)
         if aHit.isVertical(): rc = h['posX_'+str(X[0])].Fill(A[0])
         else:                     rc = h['posY_'+str(X[0])].Fill(A[1])
         mult[X[0]]+=1
@@ -1341,7 +1357,8 @@ def Mufi_Efficiency(Nev=options.nEvents,optionTrack=options.trackType,withReco='
  ut.bookHist(h,'tracksChi2Ndof','chi2/ndof',100,0.0,100.,10,-0.5,9.5)
  ut.bookHist(h,'NdofvsNMeas','ndof Nmeas',20,-0.5,19.5,20,-0.5,19.5)
 
- v = 15.* u.cm/u.ns # signal propagation in fibre, assumption
+ Scifi = geo.modules['Scifi']
+ v = Scifi.GetConfParF("Scifi/signalSpeed") #signal propagation in fibre
  if Nev < 0 : Nev = eventTree.GetEntries()
  N=0
  for event in eventTree:
@@ -1422,7 +1439,7 @@ def Mufi_Efficiency(Nev=options.nEvents,optionTrack=options.trackType,withReco='
          W = M.getRawMeasurement()
          detID = W.getDetId()
          aHit = event.Digi_ScifiHits[ DetID2Key[detID] ]
-         geo.modules['Scifi'].GetSiPMPosition(detID,A,B)
+         Scifi.GetSiPMPosition(detID,A,B)
          X = B-pos
          L0 = X.Mag()/v
          # need to correct for signal propagation along fibre
@@ -1441,7 +1458,7 @@ def Mufi_Efficiency(Nev=options.nEvents,optionTrack=options.trackType,withReco='
             clkey = W.getHitId()
             aCl = event.Cluster_Scifi[clkey]
             aHit = event.Digi_ScifiHits[ DetID2Key[detID] ]
-            geo.modules['Scifi'].GetSiPMPosition(detID,A,B)
+            Scifi.GetSiPMPosition(detID,A,B)
             if aHit.isVertical(): X = B-posM
             else: X = A-posM
             L = X.Mag()/v
@@ -2962,7 +2979,7 @@ def scifiTimings():
 
 # h['c'+str(new_list[3][0])].Draw()
 def ScifiChannel_residuals():
-   for s in range(1,6):
+   for s in range(1, nScifi+1):
      for o in range(2):
            ut.bookHist(h,'res_Scifi'+str(s*10+o),'residual  '+str(s*10+o)+';channel; [#mum]',
                               512*3,-0.5,512*3-0.5,100,-2500.,2500.)
@@ -3347,7 +3364,11 @@ def TwoTrackFinder(nstart=0,Nev=-1,sMin=10,dClMin=7,minDistance=1.5,sepDistance=
 
 def Scifi_residuals(Nev=options.nEvents,NbinsRes=100,xmin=-2000.,alignPar=False,unbiased = True,minEnergy=False,remakeClusters=options.remakeScifiClusters,nproc=1):
     projs = {1:'V',0:'H'}
-    for s in range(1,6):
+    scifi = geo.modules['Scifi']
+    nScifi = scifi.GetConfParI("Scifi/nscifi")
+    nMats = scifi.GetConfParI("Scifi/nmats")
+
+    for s in range(1, nScifi+1):
      for o in range(2):
         for p in projs:
            proj = projs[p]
@@ -3355,12 +3376,11 @@ def Scifi_residuals(Nev=options.nEvents,NbinsRes=100,xmin=-2000.,alignPar=False,
            ut.bookHist(h,'res'+proj+'_Scifi'+str(s*10+o),'residual '+proj+str(s*10+o)+'; [#mum]',NbinsRes,xmin,xmax)
            ut.bookHist(h,'resX'+proj+'_Scifi'+str(s*10+o),'residual '+proj+str(s*10+o)+'; [#mum]',NbinsRes,xmin,xmax,100,-50.,0.)
            ut.bookHist(h,'resY'+proj+'_Scifi'+str(s*10+o),'residual '+proj+str(s*10+o)+'; [#mum]',NbinsRes,xmin,xmax,100,10.,60.)
-           ut.bookHist(h,'resC'+proj+'_Scifi'+str(s*10+o),'residual '+proj+str(s*10+o)+'; [#mum]',NbinsRes,xmin,xmax,128*4*3,-0.5,128*4*3-0.5)
+           ut.bookHist(h,'resC'+proj+'_Scifi'+str(s*10+o),'residual '+proj+str(s*10+o)+'; [#mum]',NbinsRes,xmin,xmax,128*4*nMats+10,-0.5,128*4*nMats-0.5+10)
            ut.bookHist(h,'track_Scifi'+str(s*10+o),'track x/y '+str(s*10+o),80,-70.,10.,80,0.,80.)
     ut.bookHist(h,'trackChi2/ndof','track chi2/ndof vs ndof',100,0,100,20,0,20)
     ut.bookHist(h,'trackSlopes','track slope; x [mrad]; y [mrad]',1000,-100,100,1000,-100,100)
     parallelToZ = ROOT.TVector3(0., 0., 1.)
-    scifi = geo.modules['Scifi']
 
     if Nev < 0 : Nev = eventTree.GetEntries()
 # set alignment parameters
@@ -3436,13 +3456,13 @@ def Scifi_residuals(Nev=options.nEvents,NbinsRes=100,xmin=-2000.,alignPar=False,
            sortedClusters[so].append(aCl)
  
 # select events with clusters in each plane
-        if len(sortedClusters)<10: continue
+        if len(sortedClusters)<2*nScifi: continue
         goodEvent = True
         for s in sortedClusters:
           if len(sortedClusters[s])>1: goodEvent=False
         if not goodEvent: continue
         validTrack = True
-        for s in range(1,6):
+        for s in range(1, nScifi+1):
 # build trackCandidate
             hitlist = {}
             if unbiased or s==1:
@@ -3457,7 +3477,7 @@ def Scifi_residuals(Nev=options.nEvents,NbinsRes=100,xmin=-2000.,alignPar=False,
                   validTrack = False
                   continue
                fitStatus = theTrack.getFitStatus()
-               if not fitStatus.isFitConverged() or theTrack.getNumPointsWithMeasurement()<8:
+               if not fitStatus.isFitConverged() or theTrack.getNumPointsWithMeasurement()<2*(nScifi-1):
                   theTrack.Delete()
                   validTrack = False
                   continue
@@ -3532,7 +3552,7 @@ def Scifi_residuals(Nev=options.nEvents,NbinsRes=100,xmin=-2000.,alignPar=False,
       ut.bookCanvas(h,'scifiRes'+proj,'',1600,1900,2,5)
       k=1
       j = {0:0,1:0}
-      for s in range(1,6):
+      for s in range(1, nScifi+1):
          for o in range(2):
             so = s*10+o
             tc = h['scifiRes'+proj].cd(k)
@@ -3557,7 +3577,7 @@ def Scifi_residuals(Nev=options.nEvents,NbinsRes=100,xmin=-2000.,alignPar=False,
                 globalPos[p+projs[o]].SetMarkerStyle(21)
                 globalPos[p+projs[o]].SetMarkerColor(ROOT.kBlue)
             if proj == 'C':
-                for m in range(3):
+                for m in range(nMats):
                      h[hname+str(m)] = h[hname].ProjectionX(hname+str(m),m*512,m*512+512)
                      rc = h[hname+str(m)].Fit('gaus','SQ0')
                      fitResult = rc.Get()
@@ -3613,17 +3633,17 @@ def printScifi_residuals(tag='v0'):
     for p in h['globalPosM']:
       myPrint(h[p+'M'],tag+'-scifiResM'+p)
 # make report about alignment constants
-    for s in range(1,6):
+    for s in range(1, nScifi+1):
         for o in range(2):
              mean = [] 
-             for m in range(3):
+             for m in range(nMats):
                   x = "Scifi/LocM"+str(s*100+o*10+m)
                   mean.append(Scifi.GetConfParF(x)/u.um)
-             XM = (mean[0]+mean[1]+mean[2])/3.
-             print("      mean value %8.2F            delta s: %8.2F  %8.2F  %8.2F"%(XM,mean[0]-XM,mean[1]-XM,mean[2]-XM))
+             XM = sum(mean)/nMats
+             print("mean value %8.2F" %XM, " delta s:", ["%8.2F" %(mean[i]-XM) for i in range(nMats)])
 # for H6 beam
     h6 = False
-    if H6:
+    if h6:
         h['trackSlopes'].GetYaxis().SetRangeUser(-20,20)
         h['trackSlopes'].GetXaxis().SetRangeUser(-40,0)
     ut.bookCanvas(h,'beamSpot','track slopes',750,750,1,1)
@@ -3632,19 +3652,23 @@ def printScifi_residuals(tag='v0'):
     myPrint(h['beamSpot'],tag+'-beamSpot')
 
 def printScifiAlignment():
-    for s in range(1,6):
+    if nMats ==1 : plane = ['0', '1']
+    if nMats ==3 : plane = ['']
+    for s in range(1, nScifi+1):
         for o in range(2):
              p = 10*s+o
-             txt = "        c.Scifi.LocM"+str(p)+"0,c.Scifi.LocM"+str(p)+"1,c.Scifi.LocM"+str(p)+"2 =  "
-             for m in range(3):
+             if nMats ==1: txt = "        c.Scifi.LocM"+str(p)+"0 = "             
+             if nMats ==3: txt = "        c.Scifi.LocM"+str(p)+"0,c.Scifi.LocM"+str(p)+"1,c.Scifi.LocM"+str(p)+"2 =  "
+             for m in range(nMats):
                   x = "Scifi/LocM"+str(s*100+o*10+m)
                   txt += "%8.2F*u.um,"%(Scifi.GetConfParF(x)/u.um)
              l = len(txt)
              print(txt[:l-1])
-    for s in range(1,6):
-        txt = "        c.Scifi.RotPhiS"+str(s)+",c.Scifi.RotPsiS"+str(s)+",c.Scifi.RotThetaS"+str(s)+" = "
+    for s in range(1, nScifi+1):
+      for p in plane:
+        txt = "        c.Scifi.RotPhiS"+str(s)+p+",c.Scifi.RotPsiS"+str(s)+p+",c.Scifi.RotThetaS"+str(s)+p+" = "
         for a in ["RotPhiS","RotPsiS","RotThetaS"]:
-            x = "Scifi/"+a+str(s)
+            x = "Scifi/"+a+str(s)+p
             txt += "%8.2F*u.mrad,"%(Scifi.GetConfParF(x)/u.mrad)
         l = len(txt)
         print(txt[:l-1])
@@ -3658,13 +3682,14 @@ def minimizeAlignScifi(first=True,level=1,migrad=False):
     trackTask.makeScifiClusters = True
     trackTask.clusScifi   = ROOT.TObjArray(100);
    
-    npar = 30+15
+    npar = nScifi*nMats*2 + nScifi*3
+    if nMats ==1: npar += nScifi*3
     vstart  = array('d',[0]*npar)
     h['Nevents'] = 500000
     if first:
        h['xmin'] =-5000.
        X = Scifi_residuals(Nev=10000,NbinsRes=100,xmin=h['xmin'])
-       for m in range(3):
+       for m in range(nMats):
           vstart[m]   = -X["Scifi/LocD10"][0]
           vstart[3+m] = -X["Scifi/LocD11"][0]
        err = 1000.
@@ -3727,61 +3752,18 @@ def minimizeAlignScifi(first=True,level=1,migrad=False):
           err = 500.
        if level==2:
           h['level'] = 2       # mat alignment
-          vstart[0] =    2.87296e+02     
-          vstart[1] =    5.11993e+02     
-          vstart[2] =    4.57395e+02     
-          vstart[3] =   -6.38675e+01     
-          vstart[4] =   -3.89699e+01     
-          vstart[5] =    2.75368e+01     
-          vstart[6] =   -1.86759e+02     
-          vstart[7] =    3.26774e+01     
-          vstart[8] =   -5.71174e+01     
-          vstart[9] =    1.99880e+01     
-          vstart[10] =   1.57924e+02     
-          vstart[11] =   1.80187e+02     
-          vstart[12] =  -1.84760e+00     
-          vstart[13] =   7.89774e+01     
-          vstart[14] =   1.39775e+01     
-          vstart[15] =   7.57700e-01     
-          vstart[16] =  -1.09748e+02     
-          vstart[17] =   7.45420e+01     
-          vstart[18] =  -1.67857e+01     
-          vstart[19] =   5.64360e+01     
-          vstart[20] =   9.69426e+01     
-          vstart[21] =   7.10440e+01     
-          vstart[22] =  -6.41257e+01     
-          vstart[23] =   1.72473e+01     
-          vstart[24] =   1.76322e+02     
-          vstart[25] =   1.02006e+02     
-          vstart[26] =   8.16677e+01     
-          vstart[27] =  -1.62196e+02     
-          vstart[28] =   1.84062e+02     
-          vstart[29] =   5.80966e+01     
-# rotation, three angles / station
-          vstart[30] =0.00000e+00     # s0
-          vstart[31] = -9.300e-01   
-          vstart[32] =  0.00000e+00 
-          vstart[33] =0.00000e+00     # s1
-          vstart[34] =-1.900e-01   
-          vstart[35] =  0.00000e+00 
-          vstart[36] =0.00000e+00     # s2
-          vstart[37] =0.00000e+00   
-          vstart[38] =  0.00000e+00 
-          vstart[39] =0.00000e+00     # s3
-          vstart[40] =0.00000e+00   
-          vstart[41] =  0.00000e+00 
-          vstart[42] =0.00000e+00     # s4
-          vstart[43] =-2.200e-01   
-          vstart[44] =  0.00000e+00           
+          for i in range (npar):
+            vstart[i]=0.0
+
           err = 20.
           h['xmin'] =-2000.
-          h['npar'] = 45
+          h['npar'] = npar
        if level==3:
           h['Nevents'] = 100000
           p = 0
-          for s in range(1,6):
+          for s in range(1, nScifi+1):
              for o in range(2):
-                for m in range(3):
+                for m in range(nMats):
                   x = "Scifi/LocM"+str(s*100+o*10+m)
                   vstart[p] = Scifi.GetConfParF(x)
                   p+=1
@@ -3796,41 +3778,56 @@ def minimizeAlignScifi(first=True,level=1,migrad=False):
 
     p=0
     variables = "n:chi2:"
-    for s in range(1,6):
+    if nMats ==1 : plane = ['0', '1']
+    else: plane = ['']
+    for s in range(1, nScifi+1):
         for o in range(2):
              name = "Scifi/LocM"
-             for m in range(3):
-                 gMinuit.mnparm(p, name+str(s*100+m*10+o), vstart[p], err, 0.,0.,ierflg)
+             for m in range(nMats):
+                 gMinuit.mnparm(p, name+str(s*100+o*10+m), vstart[p], err, 0.,0.,ierflg)
                  variables +=name.replace('/','')+str(s*100+o*10+m)+":"
                  p+=1
-    for s in range(1,6):    
+    for s in range(1, nScifi+1):    
+      for pln in plane:
         for r in ["RotPhiS","RotPsiS", "RotThetaS"]:   
-            name = "Scifi/"+r+str(s)         
+            name = "Scifi/"+r+str(s)+pln     
             gMinuit.mnparm(p, name, vstart[p], err/100, 0.,0.,ierflg)
             variables +=name.replace('/','')+":"
             p+=1
     if level == 1:
       p=0
-      for s in range(1,6):
+      for s in range(1, nScifi+1):
         for o in range(2):
-             for m in range(3):
+             for m in range(nMats):
                  if s==1 or s==5 : gMinuit.FixParameter(p)
                  elif m==1 or m==2 : gMinuit.FixParameter(p)
                  p+=1
-      for s in range(1,6):
-        for a in range(3):
+      for s in range(1, nScifi+1):
+        for a in range(nMats):
             gMinuit.FixParameter(p)
             p+=1
              
     if level == 2:
       p=0
-      for s in range(1,6):
+      for s in range(1,nScifi+1):
         for o in range(2):
-             for m in range(3):
-                 if s==3 or s==4 : gMinuit.FixParameter(p)
+             for m in range(nMats):
+                 if nMats == 1:
+                   # fix one plane in one station
+                   # since for some stations in the H8 2023 testbeam
+                   # there are rotations btw planes that are accounted for
+                   if s==2 and o==0 : gMinuit.FixParameter(p)
+                 else:
+                   if s==3 or s==4 : gMinuit.FixParameter(p)
                  p+=1
-      for s in range(1,6):
-        for a in range(3):
+      for s in range(1, nScifi+1):    
+       if nMats == 1:
+         for o in range(2):
+           for a in range(3):
+              if a==0 or a==2 or (s==2 and o==0): gMinuit.FixParameter(p)
+              p+=1
+       else:
+         for a in range(3):
             if a==0 or a==2 or s==3 : gMinuit.FixParameter(p)
             p+=1
 
@@ -3888,6 +3885,9 @@ def minimizeAlignScifi(first=True,level=1,migrad=False):
     tc = h[p].cd()
     h['evol'].Draw("chi2:n",'','*')
 
+    h[p].SaveAs("chi2ndf.root","root")
+    h[p].SaveAs("chi2ndf.pdf","pdf")
+
 def FCN(npar, gin, f, par, iflag):
 #calculate chisquare
    h['iter']+=1
@@ -3899,7 +3899,7 @@ def FCN(npar, gin, f, par, iflag):
           s = p//2+1
           o = p%2
           name = "Scifi/LocD"+str(s*10+o)
-       if h['npar'] > 29: 
+       if h['npar'] > 29 and h['npar'] != 32: 
          if p<30:
            s =  p//6+1
            o = (p%6)//3
@@ -3910,19 +3910,30 @@ def FCN(npar, gin, f, par, iflag):
            if p%3 == 0: name = "Scifi/RotPhiS"+str(s)
            if p%3 == 1: name = "Scifi/RotPsiS"+str(s)
            if p%3 == 2: name = "Scifi/RotThetaS"+str(s)
+       if h['npar'] == 32:
+         if p<8:
+           s = p//2+1
+           o = p%2
+           m = 0
+           name = "Scifi/LocM"+str(s*100+o*10+m)
+         else:
+           s = (p-8)//6 + 1
+           o = ((p-8)//3)%2
+           if p%3 == 2: name = "Scifi/RotPhiS"+str(s)+str(o)
+           if p%3 == 0: name = "Scifi/RotPsiS"+str(s)+str(o)
+           if p%3 == 1: name = "Scifi/RotThetaS"+str(s)+str(o)
        h['alignPar'][name]  = par[p]
-       print('minuit %s %6.4F'%(name,par[p]))           
-       if h['level']==1 and p<30: # station alignment    
+       print('minuit %s %6.4F'%(name,par[p]), p)           
+       if h['level']==1 and p<nScifi*nMat*2: # station alignment    
          if m>0: h['alignPar'][name]  = par[p-m]
        else:  
          h['alignPar'][name]  = par[p]
        theArray.append(par[p])
-       
    X = Scifi_residuals(Nev=h['Nevents'],NbinsRes=100,xmin=h['xmin'],alignPar=h['alignPar'],nproc=10)
    projs = {1:'V',0:'H'}
-   for s in range(1,6):
+   for s in range(1,5):
     sigma = 15
-    if s==1 or s==5: sigma = 35
+    if s==1 or s==nScifi: sigma = 35
     for o in range(2):
      for p in projs:
        proj = projs[p]

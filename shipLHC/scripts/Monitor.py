@@ -507,7 +507,7 @@ class Monitoring():
              self.MuFilter.GetPosition(s*10000+p*1000+bar,A,B)
              zPos['MuFilter'][s*10+plane] = (A.Z()+B.Z())/2.
       for s in range(1,6):
-         mat   = 2
+         mat   = 1
          sipm = 1
          channel = 64
          for o in range(2):
