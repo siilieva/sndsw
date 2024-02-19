@@ -264,7 +264,7 @@ void Scifi::ConstructGeometry()
   Double_t zPosM;
   Double_t offsetS =  -fWidthScifiMat/2 + fOffsetRowS;
   Double_t offsetL =  -fWidthScifiMat/2 + fOffsetRowL;
-  
+
   // All fibres will be assigned station number 1 and mat number 1, to keep compatibility with the STMRFFF format.
   int dummy_station = 1;
   int dummy_mat = 1;
@@ -508,8 +508,10 @@ Double_t Scifi::GetCorrectedTime(Int_t fDetectorID, Double_t rawTime, Double_t L
 		else{		
 		     // allow reading older geo files with letter tags i.e. A, B, C
 		    tag = "tA";
-		    if (fRunNumber>5116 && !(fRunNumber<5193 && fRunNumber>5174) ) {tag = "tB";}		
-		}		
+		    if (fRunNumber>5116 && !(fRunNumber<5193 && fRunNumber>5174) ) {tag = "tB";}
+		}
+		// 2023 testbeam data doesn't have a custom tag
+		if (fRunNumber>=1e5) {tag = "t";}		
 	}
 	sID.Form("%i",fDetectorID);
 	Double_t cor = conf_floats["Scifi/station"+TString(sID(0,1))+tag];
@@ -598,6 +600,7 @@ void Scifi::GetSiPMPosition(Int_t SiPMChan, TVector3& A, TVector3& B)
 	Int_t globNumber         = int(SiPMChan/100000)*100000;
 	Float_t locPosition        = SiPMPos[locNumber]; // local position in plane of reference plane.
 	Double_t fFiberLength  = conf_floats["Scifi/fiber_length"];
+	Int_t fNMats   = conf_ints["Scifi/nmats"]; 
 	
 	TString tag = "";
 	vector<int> coveredRuns{};
@@ -632,14 +635,16 @@ void Scifi::GetSiPMPosition(Int_t SiPMChan, TVector3& A, TVector3& B)
 		    else if (fRunNumber<5172) {tag = "C";}
 		    else if (fRunNumber<5431) {tag = "D";}
 		}
+		// 2023 testbeam data doesn't have a custom tag
+		if (fRunNumber>=1e5) {tag = "";}
 	}
 	TString sID;
 	sID.Form("%i",SiPMChan);
-	
+	Int_t digits = fNMats==1 ? 2 : 1; 
 	locPosition += conf_floats["Scifi/LocM"+TString(sID(0,3))+tag];
-	Float_t rotPhi = conf_floats["Scifi/RotPhiS"+TString(sID(0,1))+tag];
-	Float_t rotPsi = conf_floats["Scifi/RotPsiS"+TString(sID(0,1))+tag];
-	Float_t rotTheta = conf_floats["Scifi/RotThetaS"+TString(sID(0,1))+tag];
+	Float_t rotPhi = conf_floats["Scifi/RotPhiS"+TString(sID(0,digits))+tag];
+	Float_t rotPsi = conf_floats["Scifi/RotPsiS"+TString(sID(0,digits))+tag];
+	Float_t rotTheta = conf_floats["Scifi/RotThetaS"+TString(sID(0,digits))+tag];
 
 	Double_t loc[3] = {0,0,0};
 	TString path = "/cave_1/Detector_0/volTarget_1/ScifiVolume"+TString(sID(0,1))+"_"+TString(sID(0,1))+"000000/";
