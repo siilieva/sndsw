@@ -348,11 +348,12 @@ def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-
     if hitColour is not None :
            h["markerCollection"] = []
 
-    dTs = "%5.2Fns"%(dT/freq*1E9)
+    #Do we still use these lines? Seems no. 
+    #And for events having all negative QDCs minT[1] is returned empty and the display crashes.
+    #dTs = "%5.2Fns"%(dT/freq*1E9)
     # find detector which triggered
-    minT = firstTimeStamp(event)
-    if minT[0] < 1000000000:
-        dTs+= "    " + str(minT[1].GetDetectorID())
+    #minT = firstTimeStamp(event)
+    #dTs+= "    " + str(minT[1].GetDetectorID())
     for p in proj:
        rc = h[ 'simpleDisplay'].cd(p)
        h[proj[p]].Draw('b')
@@ -718,12 +719,14 @@ def drawDetectors():
       nodes['volTarget_1/volWallborder_{}'.format(i)]=ROOT.kGray
       nodes['volMuFilter_1/subUSBox_{}'.format(i+2)]=ROOT.kGray+1
       nodes['volMuFilter_1/volMuUpstreamDet_{}_{}'.format(i, i+2)]=ROOT.kBlue+1
+      # iron blocks btw SciFi planes in the testbeam 2023 det layout
+      nodes['volTarget_1/volFeTarget{}_1'.format(i+1)]=ROOT.kGreen-6
       for j in range(10):
          nodes['volMuFilter_1/volMuUpstreamDet_{}_{}/volMuUpstreamBar_2{}00{}'.format(i, i+2, i, j)]=ROOT.kBlue+1
       nodes['volMuFilter_1/volFeBlock_{}'.format(i)]=ROOT.kGreen-6
    for i in range(7,10):
       nodes['volMuFilter_1/volFeBlock_{}'.format(i)]=ROOT.kGreen-6
-   passNodes = {'Block', 'Wall'}
+   passNodes = {'Block', 'Wall', 'FeTarget'}
    xNodes = {'UpstreamBar', 'VetoBar', 'hor'}
    proj = {'X':0,'Y':1}
    for node_ in nodes:
@@ -736,6 +739,8 @@ def drawDetectors():
             X.Draw('f&&same')
             X.Draw('same')
          else:
+            # check if node exists
+            if not nav.CheckPath(node): continue
             nav.cd(node)
             N = nav.GetCurrentNode()
             S = N.GetVolume().GetShape()
