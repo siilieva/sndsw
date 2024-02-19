@@ -264,7 +264,7 @@ void Scifi::ConstructGeometry()
   Double_t zPosM;
   Double_t offsetS =  -fWidthScifiMat/2 + fOffsetRowS;
   Double_t offsetL =  -fWidthScifiMat/2 + fOffsetRowL;
-  
+
   // All fibres will be assigned station number 1 and mat number 1, to keep compatibility with the STMRFFF format.
   int dummy_station = 1;
   int dummy_mat = 1;
