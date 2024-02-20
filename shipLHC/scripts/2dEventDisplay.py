@@ -228,7 +228,21 @@ def bunchXtype():
              if not b1 and not b2: xing['noBeam'] = True
         return xing
 
-def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-1,nTracks=0,minSipmMult=1,withTiming=False, option=None,Setup='',verbose=0,auto=False, hitColour = None):
+def loopEvents(
+              start=0,
+              save=False,
+              goodEvents=False,
+              withTrack=-1,
+              withHoughTrack=-1,
+              nTracks=0,
+              minSipmMult=1,
+              withTiming=False,
+              option=None,
+              Setup='',
+              verbose=0,
+              auto=False,
+              hitColour=None
+              ):
  if 'simpleDisplay' not in h: ut.bookCanvas(h,key='simpleDisplay',title='simple event display',nx=1200,ny=1600,cx=1,cy=2)
  h['simpleDisplay'].cd(1)
  zStart = 250. # TI18 coordinate system
@@ -333,7 +347,7 @@ def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-
     if empty: continue
     h['hitCollectionX']= {'Scifi':[0,ROOT.TGraphErrors()],'DS':[0,ROOT.TGraphErrors()]}
     h['hitCollectionY']= {'Veto':[0,ROOT.TGraphErrors()],'Scifi':[0,ROOT.TGraphErrors()],'US':[0,ROOT.TGraphErrors()],'DS':[0,ROOT.TGraphErrors()]}
-    if hitColour is not None :
+    if hitColour:
            h['hitColourX'] = {'Scifi': [], 'DS' : []}
            h['hitColourY'] = {'Veto': [], 'Scifi' : [], 'US' : [], 'DS' : []}
 
@@ -345,7 +359,7 @@ def loopEvents(start=0,save=False,goodEvents=False,withTrack=-1,withHoughTrack=-
           rc=h[collection][c][1].SetName(c)
           rc=h[collection][c][1].Set(0)
 
-    if hitColour is not None :
+    if hitColour:
            h["markerCollection"] = []
 
     #Do we still use these lines? Seems no. 
@@ -1025,7 +1039,7 @@ def dumpChannels(D='Digi_MuFilterHits'):
      keys.sort()
      for k in keys: print(text[k])
 
-def fillNode(node, color = None):
+def fillNode(node, color=None):
    xNodes = {'UpstreamBar', 'VetoBar', 'hor'}
    proj = {'X':0,'Y':1}
    if color == None :
