@@ -419,7 +419,7 @@ def loopEvents(
           rc=h[collection][c][1].SetName(c)
           rc=h[collection][c][1].Set(0)
 
-    if hitColour is not None :
+    if hitColour:
            h["markerCollection"] = []
 
     #Do we still use these lines? Seems no. 
