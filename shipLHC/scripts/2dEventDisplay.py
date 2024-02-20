@@ -228,6 +228,65 @@ def bunchXtype():
              if not b1 and not b2: xing['noBeam'] = True
         return xing
 
+def getSciFiHitDensity(g, x_range=0.5):
+       """Takes ROOT TGraph g and returns array with number of hits within x_range cm of each hit."""
+       ret = []
+       for i in range(g.GetN()):
+              x_i = g.GetPointX(i)
+              y_i = g.GetPointY(i)
+              density = 0
+              for j in range(g.GetN()):
+                     x_j = g.GetPointX(j)
+                     y_j = g.GetPointY(j)
+                     if ((x_i - x_j)**2 + (y_i - y_j)**2) <= x_range**2:
+                            density += 1
+              ret.append(density)
+       return ret
+                       
+def drawLegend(max_density, max_QDC, n_legend_points):
+       """Draws legend for hit colour"""
+       h['simpleDisplay'].cd(1)
+       n_legend_points = 5
+       padLegScifi = ROOT.TPad("legend","legend",0.4,0.15,0.4+0.25, 0.15+0.25)
+       padLegScifi.SetFillStyle(4000)
+       padLegScifi.Draw()
+       padLegScifi.cd()
+       text_scifi_legend = ROOT.TLatex()
+       text_scifi_legend.SetTextAlign(11)
+       text_scifi_legend.SetTextFont(42)
+       text_scifi_legend.SetTextSize(.15)
+       for i in range(n_legend_points) :
+              if i < (n_legend_points - 1) :
+                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_legend_points+2)), 0.2, "{:d}".format(int(i*max_density/(n_legend_points-1))))
+                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_legend_points+2)), 0.,  "{:.0f}".format(int(i*max_QDC/(n_legend_points-1))))
+              else :
+                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_legend_points+2)), 0.2, "{:d} SciFi hits/cm".format(int(i*max_density/(n_legend_points-1))))
+                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_legend_points+2)), 0.,  "{:.0f} QDC units".format(int(i*max_QDC/(n_legend_points-1))))
+                     
+              h["markerCollection"].append(ROOT.TEllipse((i+0.15)*(1./(n_legend_points+2)), 0.26, 0.05/4, 0.05))
+              h["markerCollection"][-1].SetFillColor(ROOT.TColor.GetPalette()[int(float(i*max_density/(n_legend_points-1))/max_density*(len(ROOT.TColor.GetPalette())-1))])
+              h["markerCollection"][-1].Draw("SAME")
+              
+              h["markerCollection"].append(ROOT.TBox((i+0.15)*(1./(n_legend_points+2))-0.05/4 , 0.06 - 0.05, (i+0.15)*(1./(n_legend_points+2))+0.05/4, 0.06 + 0.05))
+              h["markerCollection"][-1].SetFillColor(ROOT.TColor.GetPalette()[int(float(i*max_QDC/(n_legend_points-1))/max_QDC*(len(ROOT.TColor.GetPalette())-1))])
+              h["markerCollection"][-1].Draw("SAME")
+
+def drawSciFiHits(g, colour):
+       """Takes TGraph g and draws the graphs markers with the TColor given in list colour."""
+       n = g.GetN()
+       # Draw highest density points last
+       sorted_indices = np.argsort(colour)
+       for i_unsorted in range(0, n):
+              i = int(sorted_indices[i_unsorted])
+
+              x = g.GetPointX(i)
+              y = g.GetPointY(i)
+
+              h["markerCollection"].append(ROOT.TEllipse(x, y, 1.5, 1.5))
+              h["markerCollection"][-1].SetLineWidth(0)
+              h["markerCollection"][-1].SetFillColor(colour[i])
+              h["markerCollection"][-1].Draw("SAME")
+ 
 def loopEvents(
               start=0,
               save=False,
@@ -350,6 +409,7 @@ def loopEvents(
     if hitColour:
            h['hitColourX'] = {'Scifi': [], 'DS' : []}
            h['hitColourY'] = {'Veto': [], 'Scifi' : [], 'US' : [], 'DS' : []}
+           h["markerCollection"] = []
 
     h['firedChannelsX']= {'Scifi':[0,0,0],'DS':[0,0,0]}
     h['firedChannelsY']= {'Veto':[0,0,0,0],'Scifi':[0,0,0],'US':[0,0,0,0],'DS':[0,0,0,0]}
@@ -358,9 +418,6 @@ def loopEvents(
        for c in h[collection]:
           rc=h[collection][c][1].SetName(c)
           rc=h[collection][c][1].Set(0)
-
-    if hitColour:
-           h["markerCollection"] = []
 
     #Do we still use these lines? Seems no. 
     #And for events having all negative QDCs minT[1] is returned empty and the display crashes.
@@ -440,55 +497,13 @@ def loopEvents(
     h['hitCollectionX']['Scifi'][1].SetMarkerColor(ROOT.kBlue+2)
 
     if hitColour == "q" :
-       # Get SciFi hit density
-       max_scifi_density = 40 # Number of SiPM channels in 1 cm.
-       for orientation in ['X', 'Y'] :
-          for i in range(h['hitCollection'+orientation]['Scifi'][1].GetN()) :
-             x_i = h['hitCollection'+orientation]['Scifi'][1].GetPointX(i)
-             y_i = h['hitCollection'+orientation]['Scifi'][1].GetPointY(i)
-             density = 0
-             for j in range(h['hitCollection'+orientation]['Scifi'][1].GetN()) :
-                x_j = h['hitCollection'+orientation]['Scifi'][1].GetPointX(j)
-                y_j = h['hitCollection'+orientation]['Scifi'][1].GetPointY(j)
-                if ((x_i - x_j)**2 + (y_i - y_j)**2) <= 0.5**2 :
-                   density += 1
-             h['hitColour'+orientation]['Scifi'].append(density)
-       for orientation in ['X', 'Y'] :
-          for i in range(h['hitCollection'+orientation]['Scifi'][1].GetN()) :
-                 if h['hitColour'+orientation]['Scifi'][i] > max_scifi_density :
-                        h['hitColour'+orientation]['Scifi'][i] = max_scifi_density
-                 h['hitColour'+orientation]['Scifi'][i] = ROOT.TColor.GetPalette()[int(float(h['hitColour'+orientation]['Scifi'][i])/max_scifi_density*(len(ROOT.TColor.GetPalette())-1))]
+       for orientation in ['X', 'Y']:
+              max_density = 40
+              density = np.clip(0, max_density, getSciFiHitDensity(h['hitCollection'+orientation]['Scifi'][1]))
+              for i in range(h['hitCollection'+orientation]['Scifi'][1].GetN()) :
+                     h['hitColour'+orientation]['Scifi'].append(ROOT.TColor.GetPalette()[int(float(density[i])/max_density*(len(ROOT.TColor.GetPalette())-1))])
 
-       # Draw colour legend, by hand...
-       h['simpleDisplay'].cd(1)
-       n_scifi_legend_points = 5
-       min_x_leg = 360
-       max_x_leg = 440
-       y_leg = -85
-       padLegScifi = ROOT.TPad("legScifi","legScifi",0.4,0.15,0.4+0.25, 0.15+0.25)
-       padLegScifi.SetFillStyle(4000)
-       padLegScifi.Draw()
-       padLegScifi.cd()
-       text_scifi_legend = ROOT.TLatex()
-       text_scifi_legend.SetTextAlign(11)
-       text_scifi_legend.SetTextFont(42)
-       text_scifi_legend.SetTextSize(.15)
-       for i in range(n_scifi_legend_points) :
-              if i < (n_scifi_legend_points - 1) :
-                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_scifi_legend_points+2)), 0.2, "{:d}".format(int(i*max_scifi_density/(n_scifi_legend_points-1))))
-                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_scifi_legend_points+2)), 0.,  "{:.0f}".format(int(i*max_QDC/(n_scifi_legend_points-1))))
-              else :
-                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_scifi_legend_points+2)), 0.2, "{:d} SciFi hits/cm".format(int(i*max_scifi_density/(n_scifi_legend_points-1))))
-                     text_scifi_legend.DrawLatex((i+0.3)*(1./(n_scifi_legend_points+2)), 0.,  "{:.0f} QDC units".format(int(i*max_QDC/(n_scifi_legend_points-1))))
-
-              h["markerCollection"].append(ROOT.TEllipse((i+0.15)*(1./(n_scifi_legend_points+2)), 0.26, 0.05/4, 0.05))
-              h["markerCollection"][-1].SetFillColor(ROOT.TColor.GetPalette()[int(float(i*max_scifi_density/(n_scifi_legend_points-1))/max_scifi_density*(len(ROOT.TColor.GetPalette())-1))])
-              h["markerCollection"][-1].Draw("SAME")
-
-              h["markerCollection"].append(ROOT.TBox((i+0.15)*(1./(n_scifi_legend_points+2))-0.05/4 , 0.06 - 0.05, (i+0.15)*(1./(n_scifi_legend_points+2))+0.05/4, 0.06 + 0.05))
-              h["markerCollection"][-1].SetFillColor(ROOT.TColor.GetPalette()[int(float(i*max_QDC/(n_scifi_legend_points-1))/max_QDC*(len(ROOT.TColor.GetPalette())-1))])
-              h["markerCollection"][-1].Draw("SAME")
-                                          
+       drawLegend(max_density, max_QDC, 5)
                          
     k = 1
     moreEventInfo = []
@@ -515,20 +530,7 @@ def loopEvents(
                      rc=h[collection][c][1].Draw('sameP')
                      h['display:'+c]=h[collection][c][1]
               elif hitColour == "q" :
-                     n = h[collection][c][1].GetN()
-
-                     # Draw highest density points last
-                     sorted_indices = np.argsort(h['hitColour'+collection[-1]]['Scifi'])
-                     for i_unsorted in range(0, n) :
-                            i = int(sorted_indices[i_unsorted])
-                            
-                            x = h[collection][c][1].GetPointX(i)
-                            y = h[collection][c][1].GetPointY(i)
-                            
-                            h["markerCollection"].append( ROOT.TEllipse(x, y, 1.5, 1.5))
-                            h["markerCollection"][-1].SetLineWidth(0)
-                            h["markerCollection"][-1].SetFillColor(h['hitColour'+collection[-1]]['Scifi'][i])
-                            h["markerCollection"][-1].Draw("SAME")
+                     drawSciFiHits(h[collection][c][1], h['hitColour'+collection[-1]][c])
                                
     T0 = eventTree.EventHeader.GetEventTime()
     if type(start) == type(1): rc = event.GetEvent(N-1)
