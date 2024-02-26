@@ -1,5 +1,16 @@
 var NAVTREEINDEX16 =
 {
+"classMagneticSpectrometer.html#a1221f270d7e0816a578efd826c6a4bde":[12,0,110,86],
+"classMagneticSpectrometer.html#a13d56f4d147187c9675210be69bfd580":[12,0,110,90],
+"classMagneticSpectrometer.html#a152d60c00ec3fcabf51338df2c4a19b9":[12,0,110,16],
+"classMagneticSpectrometer.html#a153e0c661d730bc3b1dc3ff7aa3f1671":[12,0,110,41],
+"classMagneticSpectrometer.html#a1903c25a6053ce545424abd0eaa9598e":[12,0,110,57],
+"classMagneticSpectrometer.html#a195e14b10b723ee33fb5b89f4ff7ed8c":[12,0,110,55],
+"classMagneticSpectrometer.html#a1afabfac2860c696c2968e83f249d201":[12,0,110,72],
+"classMagneticSpectrometer.html#a1b4df7270cec71d53da4c9d3de7ae272":[12,0,110,25],
+"classMagneticSpectrometer.html#a1ca7fb9953a4a331da4979c37fd21ff6":[12,0,110,8],
+"classMagneticSpectrometer.html#a223c9d2c1d8ba722348ad5e3497c80c4":[12,0,110,63],
+"classMagneticSpectrometer.html#a2339a10be15b2090b5a21224f87d4d63":[12,0,110,74],
 "classMagneticSpectrometer.html#a257a64528613def41f003801cd31e8d6":[12,0,110,67],
 "classMagneticSpectrometer.html#a28fe3a4c2f2193321bbde05dffb4fcab":[12,0,110,29],
 "classMagneticSpectrometer.html#a2cefd3fa81b57426faad20d85d17fac4":[12,0,110,38],
@@ -238,16 +249,5 @@ var NAVTREEINDEX16 =
 "classMuFilter.html#ae25888f8c2693c4814b9dbb63306aabe":[12,0,113,8],
 "classMuFilter.html#ae4f7ea4c7b3f5bd4c44e321277cbb691":[12,0,113,41],
 "classMuFilter.html#aee98c7a29a40aa284f4d214e936efaf0":[12,0,113,14],
-"classMuFilter.html#af0f2bbe482487704c8d319b22da5273d":[12,0,113,28],
-"classMuFilter.html#af593d8d2c6fb98053c662e594789fd6d":[12,0,113,23],
-"classMuFilter.html#afe2224c41d3376b7d5ed7bea963bf685":[12,0,113,26],
-"classMuFilterHit.html":[12,0,114],
-"classMuFilterHit.html#a0f0be88ffa8b7e1dc070bdb9a294bef0":[12,0,114,23],
-"classMuFilterHit.html#a2190f0d10669979a39c2af969b1754be":[12,0,114,3],
-"classMuFilterHit.html#a25ea4bfdea329075521d2477fa6859f4":[12,0,114,1],
-"classMuFilterHit.html#a31743dcefe81bc620f77f207ba07dc0c":[12,0,114,2],
-"classMuFilterHit.html#a326502e61e73a8ebbc2bf31899b0d38a":[12,0,114,0],
-"classMuFilterHit.html#a334c4a379bf5dc92233dd0898cc5fa8b":[12,0,114,22],
-"classMuFilterHit.html#a65456b1467cf2561a876a09472a80e8e":[12,0,114,17],
-"classMuFilterHit.html#a6adc5e3d76bd179aa7979f04a6a03061":[12,0,114,10]
+"classMuFilter.html#af0f2bbe482487704c8d319b22da5273d":[12,0,113,28]
 };
