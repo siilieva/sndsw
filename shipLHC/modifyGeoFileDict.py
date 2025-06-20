@@ -9,17 +9,18 @@ from XRootD import client
 theClient = client.FileSystem('root://eospublic.cern.ch')
 commonPath = "/eos/experiment/sndlhc/convertedData/physics/"
 
-'''supportedGeoFiles = ["geofile_sndlhc_TI18_V1_06July2022.root","geofile_sndlhc_TI18_V2_12July2022.root","geofile_sndlhc_TI18_V3_08August2022.root",
-                     "geofile_sndlhc_TI18_V4_10August2022.root","geofile_sndlhc_TI18_V5_14August2022.root","geofile_sndlhc_TI18_V6_08October2022.root",
-                     "geofile_sndlhc_TI18_V7_22November2022.root"]
-'''
-supportedGeoFiles = {"geofile_sndlhc_TI18_V7_22November2022.root":commonPath+"2022/",
-                     "geofile_sndlhc_TI18_V0_2024.root":commonPath+"2024/"}
+supportedGeoFiles = {}
+supported_years = [2022, 2023, 2024]
+for year in supported_years:
+   supportedGeoFiles["geofile_sndlhc_TI18_V0_"+str(year)+".root"] = commonPath+str(year)+"/"
 
 def modifyDicts(year=2024):
+   if year not in supported_years:
+      print("Geometry for the required year "+str(year)+"is not supported.\n\
+             The list of supported years is:", supported_years)
+      return
    for geoFileName in supportedGeoFiles:
-         if (year == 2024 and geoFileName.find(str(year)) > 0) or \
-            (year != 2024 and geoFileName.find('2022') > 0):
+         if geoFileName.find(str(year)) > 0:
             # override locally existing file with the same name
             status = theClient.copy(supportedGeoFiles[geoFileName]+geoFileName,
                                     os.getcwd()+'/'+geoFileName, force=True)
