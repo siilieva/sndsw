@@ -26,6 +26,17 @@ We start with the first sndsw release: v1.0.0+2025-07-updateScifi.
 Shall there be a strong will/need, one can go back and create and
 fill in the logs for previous stacks.
 
+## v1.0.1+2025-07-fixTB24Wtarget
+
+### Fixed
+
+- flag logic to select target geometry for testbeam 2024
+- unit fix for selectScifiHits's `time_lower_range` default
+
+### Added
+
+- options for the 2dEvent display: filter hits in time, plot collision axis and more.
+
 ## v1.0.0+2025-07-updateScifi
 
 ### Added
