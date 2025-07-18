@@ -33,7 +33,7 @@ var searchData=
   ['snd_30',['snd',['../namespacesnd.html',1,'']]],
   ['snd_3a_3aanalysis_5fcuts_31',['analysis_cuts',['../namespacesnd_1_1analysis__cuts.html',1,'snd']]],
   ['snd_3a_3aanalysis_5ftools_32',['analysis_tools',['../namespacesnd_1_1analysis__tools.html',1,'snd']]],
-  ['sndlhc_5fgeom_5fconfig_33',['sndLHC_geom_config',['../namespacesndLHC__geom__config.html',1,'']]],
+  ['sndlhc_5fh4geom_5fconfig_33',['sndLHC_H4geom_config',['../namespacesndLHC__H4geom__config.html',1,'']]],
   ['sndlhc_5fh6geom_5fconfig_34',['sndLHC_H6geom_config',['../namespacesndLHC__H6geom__config.html',1,'']]],
   ['sndlhc_5fhxgeom_5fconfig_35',['sndLHC_HXgeom_config',['../namespacesndLHC__HXgeom__config.html',1,'']]],
   ['sndlhc_5fti18geom_5fconfig_36',['sndLHC_TI18geom_config',['../namespacesndLHC__TI18geom__config.html',1,'']]],
