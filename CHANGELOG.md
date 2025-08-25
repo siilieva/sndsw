@@ -26,6 +26,13 @@ We start with the first sndsw release: v1.0.0+2025-07-updateScifi.
 Shall there be a strong will/need, one can go back and create and
 fill in the logs for previous stacks.
 
+## v1.1.0+2025-08-BolognaTools
+
+### Added
+
+- analysys classes for SciFi and US planes, together with parameter configuraions for TI18 and testbeams setups
+- SciFi tools: hit density
+
 ## v1.0.1+2025-07-fixTB24Wtarget
 
 ### Fixed
