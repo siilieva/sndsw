@@ -177,6 +177,8 @@ if simEngine == "PG":
   myPgun.SetPRange(options.Estart,options.Eend)
   myPgun.SetPhiRange(0, 360) # // Azimuth angle range [degree]
   myPgun.SetThetaRange(0,0) # // Polar angle in lab system range [degree]
+  run.SetUserDecay("UserDecay.C") # test to force a particular decay mode
+
   if options.multiplePGSources:
     # multiple PG sources in the x-y plane; z is always the same!
     myPgun.SetBoxXYZ(options.EVx*u.cm,
