@@ -1,5 +1,6 @@
 var NAVTREEINDEX2 =
 {
+"HptPoint_8h.html":[14,0,12,5],
 "HptPoint_8h_source.html":[14,0,12,5],
 "KalmanFitStatus_8cc.html":[14,0,5,4,1,3],
 "KalmanFitStatus_8cc_source.html":[14,0,5,4,1,3],
@@ -86,7 +87,6 @@ var NAVTREEINDEX2 =
 "MuDISGenerator_8h.html":[14,0,19,15],
 "MuDISGenerator_8h_source.html":[14,0,19,15],
 "MuFilterHit_8cxx.html":[14,0,20,19],
-"MuFilterHit_8cxx.html#a2a4e3defa01c68456688479ba32a6a02":[14,0,20,19,0],
 "MuFilterHit_8cxx_source.html":[14,0,20,19],
 "MuFilterHit_8h.html":[14,0,20,20],
 "MuFilterHit_8h_source.html":[14,0,20,20],
