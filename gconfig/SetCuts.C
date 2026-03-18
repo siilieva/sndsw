@@ -46,7 +46,7 @@ void SetCuts()
   //gMC->SetCut("CUTELE",cut1);   /** electrons (GeV)*/
   //gMC->SetCut("CUTNEU",cut1);   /** neutral hadrons (GeV)*/
   //gMC->SetCut("CUTHAD",cut1);   /** charged hadrons (GeV)*/
-  //gMC->SetCut("CUTMUO",cut1);   /** muons (GeV)*/
+  gMC->SetCut("CUTMUO",0.0);   /** muons (GeV)*/
   //gMC->SetCut("BCUTE",cut1);    /** electron bremsstrahlung (GeV)*/
   //gMC->SetCut("BCUTM",cut1);    /** muon and hadron bremsstrahlung(GeV)*/
   //gMC->SetCut("DCUTE",cut1);    /** delta-rays by electrons (GeV)*/
