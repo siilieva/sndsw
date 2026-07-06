@@ -9,6 +9,7 @@
 #include "FairModule.h"                 // for FairModule
 #include "FairDetector.h"
 #include "SNDLHCEventHeader.h"
+#include "ShipUnit.h"
 
 #include "Rtypes.h"                     // for ShipMuonShield::Class, Bool_t, etc
 
@@ -108,6 +109,13 @@ class MuFilter : public FairDetector
                 TString last_time_alignment_tag;
                 int last_run_time, last_run_pos;
                 bool alignment_init;
+
+		//Birks' Law constants and medium parameters
+		float scint_density;
+		// values from values from NIM 80 (1970) 239-244, scint. type NE-102 is the closest to SND's EJ-200
+		double KB = 0.013 / ( ShipUnit::g / (ShipUnit::MeV*std::pow(ShipUnit::cm,2)) );
+		const double C = 9.6e-6 / ( pow(ShipUnit::g,2) / (pow(ShipUnit::MeV,2)*pow(ShipUnit::cm,4)) );
+
 	protected:
 
 			Int_t InitMedium(const char* name);

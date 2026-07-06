@@ -476,6 +476,7 @@ void MuFilter::InitEvent(SNDLHCEventHeader *e){
 Bool_t  MuFilter::ProcessHits(FairVolume* vol)
 {
 	/** This method is called from the MC stepping */
+	// It is called when entering the sensitive area, so the scintillator
 	//Set parameters at entrance of volume. Reset ELoss.
 	if ( gMC->IsTrackEntering() ) 
 	{
@@ -484,9 +485,27 @@ Bool_t  MuFilter::ProcessHits(FairVolume* vol)
 		fLength = gMC->TrackLength();
 		gMC->TrackPosition(fPos);
 		gMC->TrackMomentum(fMom);
+		// extract this value once
+		scint_density = gGeoManager->GetMedium("polyvinyltoluene")->GetMaterial()->GetDensity();
 	}
-	// Sum energy loss for all steps in the active volume
-	fELoss += gMC->Edep();
+	// for neutral particles OR if step size is 0, no Birks' law correction
+	if ( gMC->TrackCharge() == 0 || gMC->TrackStep() == 0 )
+	{
+	  // Sum energy loss for all steps in the active volume
+	  fELoss += gMC->Edep();
+	}
+	else
+	{
+	  // Apply Birks' law scintillator quenching correction
+	  // Charge correction (makes this formula particle-species dependent)
+	  if (gMC->TrackCharge()> 1.0)
+	  {
+	      KB *= 7.2/12.6;
+	  }
+	  const double dedx = gMC->Edep() / gMC->TrackStep() / scint_density;
+	  // assuming scint. eff = 1
+	  fELoss += (dedx / (1. + KB * dedx + C * dedx * dedx));
+	}
 
 	// Create MuFilterPoint at exit of active volume
 	if ( gMC->IsTrackExiting()    ||
